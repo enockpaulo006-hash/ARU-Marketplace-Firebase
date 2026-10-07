@@ -1,8 +1,7 @@
 import "./style.css";
 
 import {
-    onAuthStateChanged,
-    signOut
+    onAuthStateChanged
 } from "firebase/auth";
 
 import {
@@ -30,18 +29,7 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "/login.html";
 
         return;
-    }
 
-
-    // Make sure email is verified
-    if (!user.emailVerified) {
-
-        await signOut(auth);
-
-        window.location.href = "/login.html";
-
-        return;
-    }
 
 
     try {
