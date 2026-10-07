@@ -2,8 +2,7 @@ import "./style.css";
 
 import {
     signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-    sendEmailVerification
+    sendPasswordResetEmail
 } from "firebase/auth";
 
 import { auth } from "./firebase.js";
@@ -49,27 +48,6 @@ document.getElementById("app").innerHTML = `
         </button>
 
 
-        <div
-            id="verification-section"
-            class="verification-section"
-            style="display: none;"
-        >
-
-            <p>
-                Your email is not verified yet.
-            </p>
-
-            <button
-                id="resend-verification"
-                class="secondary-button"
-                type="button"
-            >
-                Resend Verification Email
-            </button>
-
-        </div>
-
-
         <p id="message"></p>
 
 
@@ -82,18 +60,14 @@ document.getElementById("app").innerHTML = `
 `;
 
 
-const form = document.getElementById("login-form");
+const form =
+    document.getElementById("login-form");
 
-const message = document.getElementById("message");
+const message =
+    document.getElementById("message");
 
 const passwordInput =
     document.getElementById("password");
-
-const verificationSection =
-    document.getElementById("verification-section");
-
-const resendVerification =
-    document.getElementById("resend-verification");
 
 const forgotPassword =
     document.getElementById("forgot-password");
@@ -107,6 +81,7 @@ form.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
+
     const email =
         document.getElementById("email").value.trim();
 
@@ -116,11 +91,11 @@ form.addEventListener("submit", async (event) => {
 
     try {
 
-        message.textContent = "Logging in...";
+        message.textContent =
+            "Logging in...";
 
-        verificationSection.style.display = "none";
 
-
+        // Sign in with Firebase Authentication
         const userCredential =
             await signInWithEmailAndPassword(
                 auth,
@@ -129,26 +104,14 @@ form.addEventListener("submit", async (event) => {
             );
 
 
-        const user = userCredential.user;
+        const user =
+            userCredential.user;
 
 
-        // Check email verification
-        if (!user.emailVerified) {
-
-            verificationSection.style.display = "block";
-
-            message.textContent =
-                "Please verify your email before accessing ARU Marketplace.";
-
-            await auth.signOut();
-
-            return;
-        }
-
-
-        // Email is verified
+        // Login successful
         message.textContent =
             `Welcome back, ${user.email}!`;
+
 
         console.log(
             "Logged in user:",
@@ -156,7 +119,8 @@ form.addEventListener("submit", async (event) => {
         );
 
 
-        // Marketplace dashboard will be connected here later.
+        // Marketplace dashboard
+        // will be connected here later.
 
 
     } catch (error) {
@@ -206,113 +170,6 @@ form.addEventListener("submit", async (event) => {
 
 
 // ========================================
-// RESEND VERIFICATION EMAIL
-// ========================================
-
-resendVerification.addEventListener(
-    "click",
-    async () => {
-
-        const email =
-            document.getElementById("email").value.trim();
-
-        const password =
-            passwordInput.value;
-
-
-        if (!email || !password) {
-
-            message.textContent =
-                "Enter your email and password first.";
-
-            return;
-        }
-
-
-        try {
-
-            message.textContent =
-                "Sending verification email...";
-
-
-            // Sign in temporarily so Firebase
-            // gives us access to the user account.
-            const userCredential =
-                await signInWithEmailAndPassword(
-                    auth,
-                    email,
-                    password
-                );
-
-
-            const user =
-                userCredential.user;
-
-
-            // Check if already verified
-            if (user.emailVerified) {
-
-                message.textContent =
-                    "Your email is already verified. You can login.";
-
-                await auth.signOut();
-
-                verificationSection.style.display =
-                    "none";
-
-                return;
-            }
-
-
-            // Send verification email
-            await sendEmailVerification(user);
-
-
-            message.textContent =
-                "Verification email sent again. Check your inbox and spam folder.";
-
-
-            // Sign out after sending
-            await auth.signOut();
-
-
-        } catch (error) {
-
-            console.error(error);
-
-
-            if (
-                error.code === "auth/invalid-credential"
-            ) {
-
-                message.textContent =
-                    "Incorrect email or password.";
-
-            }
-
-            else if (
-                error.code === "auth/too-many-requests"
-            ) {
-
-                message.textContent =
-                    "Too many attempts. Please wait before trying again.";
-
-            }
-
-            else {
-
-                message.textContent =
-                    "Could not resend the verification email. Please try again.";
-
-            }
-
-        }
-
-    }
-);
-
-
-// ========================================
 // FORGOT PASSWORD
 // ========================================
 
@@ -334,6 +191,10 @@ forgotPassword.addEventListener(
 
 
         try {
+
+            message.textContent =
+                "Sending password reset email...";
+
 
             await sendPasswordResetEmail(
                 auth,
