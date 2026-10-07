@@ -1,0 +1,48 @@
+<style>
+.breadcrumb-nav {
+    background-color: #f8f9fa;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.breadcrumb-nav a {
+    color: #0066cc;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.breadcrumb-nav a:hover {
+    text-decoration: underline;
+    color: #0052a3;
+}
+
+.breadcrumb-separator {
+    color: #999;
+    margin: 0 8px;
+    display: inline;
+}
+
+.breadcrumb-current {
+    color: #666;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+</style>
+
+<nav class="breadcrumb-nav">
+    {% for item in breadcrumbs %}
+        {% if forloop.last %}
+            <span class="breadcrumb-current">
+                {{ item.label }}
+            </span>
+        {% else %}
+            <a href="{{ item.url }}">{{ item.label }}</a>
+            <span class="breadcrumb-separator">›</span>
+        {% endif %}
+    {% endfor %}
+</nav>

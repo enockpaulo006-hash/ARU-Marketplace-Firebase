@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}My Products | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="products-section">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1>My Products</h1>
+            <div style="display: flex; gap: 10px;">
+                <a href="{% url 'products:create' %}" class="btn">+ Post New Product</a>
+            </div>
+        </div>
+
+        {% if products %}
+            <div class="product-grid">
+                {% for product in products %}
+                    <article class="product-card">
+                        <img src="{{ product.image.url }}" alt="{{ product.title }}" loading="lazy" decoding="async">
+                        <div class="product-card-body">
+                            <h2>{{ product.title }}</h2>
+                            <p class="price">Tshs {{ product.price }}</p>
+                            <p><strong>Status:</strong> {{ product.get_status_display }}</p>
+                            <p>{{ product.description|truncatechars:100 }}</p>
+                            <div class="action-list">
+                                <a href="{% url 'products:detail' product.pk %}" class="btn">View</a>
+                                <a href="{% url 'products:edit' product.pk %}" class="btn product-batch-add">Edit</a>
+                                <form method="post" action="{% url 'products:delete' product.pk %}" onsubmit="return confirm('Delete this product?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You have not posted any products yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

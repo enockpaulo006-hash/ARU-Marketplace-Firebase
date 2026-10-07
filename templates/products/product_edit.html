@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Product | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <div class="auth-options">
+            <h1>Edit Product</h1>
+            <p>Update the details of your posted item, then save your changes.</p>
+        </div>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="product-batch-actions">
+                <button type="submit" class="btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

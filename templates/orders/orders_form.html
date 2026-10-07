@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %}Order Request | Student Market Place{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <h1>Order Request</h1>
+        <p><strong>Product:</strong> {{ product.title }}</p>
+        <p><strong>Price:</strong> Tshs {{ product.price }}</p>
+        <p>Write what you want to order</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Submit Order</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}My Orders | ARU student Market{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="products-section">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1>My Orders</h1>
+        </div>
+        <p class="auth-note">Orders older than 7 days are hidden automatically. You can edit your order details only within 3 hours after posting.</p>
+
+        {% if orders %}
+            <div class="product-grid">
+                {% for order in orders %}
+                    <article class="product-card">
+                        <div class="product-card-body">
+                            <h2>{{ order.product.title }}</h2>
+                            <p><strong>Owner:</strong> {{ order.seller.full_name }}</p>
+                            <p><strong>Customer Phone:</strong> {{ order.buyer_phone }}</p>
+                            <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                            <p>{{ order.order_message }}</p>
+                            <div class="action-list">
+                                {% if order.can_buyer_edit %}
+                                    <a href="{% url 'orders:edit' order.pk %}" class="btn">Edit Order</a>
+                                {% else %}
+                                    <p class="auth-note">The 3-hour editing time has expired for this order.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You have no visible orders in the last 7 days.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.title }} | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="product-detail-section">
+    <div class="container product-detail">
+        <div class="product-image">
+            <img src="{{ product.image.url }}" alt="{{ product.title }}" decoding="async">
+        </div>
+
+        <div class="product-info">
+            <h1>{{ product.title }}</h1>
+            <p class="price">Tshs {{ product.price }}</p>
+            <p><strong>Category:</strong> {{ product.get_category_display }}</p>
+            <p><strong>Condition:</strong> {{ product.get_product_condition_display }}</p>
+            <p><strong>Location:</strong> {{ product.location }}</p>
+            <p><strong>Posted by:</strong> {{ product.seller.full_name }}</p>
+            <p>{{ product.description }}</p>
+
+            {% if user == product.seller %}
+                <div class="action-list">
+                    <a href="{% url 'products:edit' product.pk %}" class="btn product-batch-add">Edit Product</a>
+                    <form method="post" action="{% url 'products:delete' product.pk %}" onsubmit="return confirm('Delete this product?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete Product</button>
+                    </form>
+                </div>
+            {% elif user.is_authenticated %}
+                <a href="{% url 'orders:create' product.id %}" class="btn">Order product</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn">Login to Order</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

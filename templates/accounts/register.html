@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+
+{% block title %}Register | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <div class="auth-options">
+            <h1>Create Account</h1>
+            <p>Choose how you want to continue.</p>
+
+            {% if google_auth_enabled %}
+                <form method="post" action="{% provider_login_url 'google' %}" class="social-auth-form">
+                    {% csrf_token %}
+                    <button type="submit" class="social-btn">
+                        {% include 'includes/google_icon.html' %}
+                        Continue with Google
+                    </button>
+                </form>
+            {% else %}
+                <p class="social-note">Google sign up will appear here after Google OAuth is configured.</p>
+            {% endif %}
+
+            <div class="social-divider">
+                <span>or continue with email</span>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Register</button>
+        </form>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <p class="auth-helper">
+            </p>
+        </div>
+    </div>
+</section>
+{% endblock %}

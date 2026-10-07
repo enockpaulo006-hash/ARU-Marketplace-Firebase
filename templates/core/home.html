@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+
+{% block title %}Home | ARU STUDENT MARKET PLACE{% endblock %}
+
+{% block content %}
+<section class="hero hero-home">
+    <div class="container hero-shell">
+        <div class="hero-copy">
+            <span class="eyebrow">Campus buying and selling made simple</span>
+            <h1>Find trusted student deals, study essentials, and everyday items around ARU.</h1>
+            <p>
+                Discover active listings, compare prices quickly, And post your own products in a marketplace
+                built for student life.
+            </p>
+            
+            <div class="hero-actions">
+                <a href="{% url 'products:list' %}" class="btn">Browse Products</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'products:create' %}" class="btn btn-secondary">Post a Product</a>
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn btn-secondary">Create Account</a>
+                {% endif %}
+            </div>
+
+            <div class="hero-stats">
+                <article class="hero-stat">
+                    <strong>{{ stats.active_products }}</strong>
+                    <span>Active listings</span>
+                </article>
+                <article class="hero-stat">
+                    <strong>{{ stats.student_sellers }}</strong>
+                    <span>Student sellers</span>
+                </article>
+                <article class="hero-stat">
+                    <strong>{{ stats.campus_categories }}</strong>
+                    <span>Marketplace categories</span>
+                </article>
+            </div>
+        </div>
+
+        <div class="hero-visual">
+            {% if featured_products %}
+                <div class="hero-mosaic">
+                    {% for product in featured_products|slice:":4" %}
+                        <article class="hero-mosaic-card">
+                            <img src="{{ product.image.url }}" alt="{{ product.title }}" decoding="async">
+                            <div class="hero-mosaic-copy">
+                                <p>{{ product.get_category_display }}</p>
+                                <h2>{{ product.title }}</h2>
+                                <span>Tshs {{ product.price }}</span>
+                            </div>
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="hero-placeholder">
+                    <div class="hero-placeholder-card">
+                        <strong>Fast posting</strong>
+                        <p>Create a listing in minutes and let other students discover it quickly.</p>
+                    </div>
+                    <div class="hero-placeholder-card">
+                        <strong>Real campus demand</strong>
+                        <p>Books, tech, fashion, and hostel items all belong in one easy marketplace.</p>
+                    </div>
+                    <div class="hero-placeholder-card">
+                        <strong>Clear next steps</strong>
+                        <p>Users browse, compare, and contact sellers without getting lost in the process.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<section class="home-section">
+    <div class="container">
+        <div class="section-heading">
+         <!--   <span class="section-tag">Why students stay longer</span>
+            <h2>A homepage that explains the platform instead of stopping after one screen.</h2>
+            <p>
+                These sections give visitors more to read, more reasons to trust the app, and real content
+                they can scroll through before deciding to sign up.
+            </p>
+        </div>
+
+        <div class="value-grid">
+            <article class="value-card">
+                <span>Quick discovery</span>
+                <h3>Students see what is available right away</h3>
+                <p>Real listings and stronger sections make the homepage feel active instead of empty.</p>
+            </article>
+            <article class="value-card">
+                <span>Better clarity</span>
+                <h3>The platform explains itself clearly</h3>
+                <p>Visitors can understand what they can buy, how to post, and why the app is useful.</p>
+            </article>
+            <article class="value-card">
+                <span>Professional feel</span>
+                <h3>More structure gives the site a polished look</h3>
+                <p>Spacing, sections, and imagery make the project feel more complete and trustworthy.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="home-section home-section-accent">
+    <div class="container home-surface">
+        <div class="section-heading"> -->
+            <span class="section-tag">Featured listings</span>
+            <h2>Recent products you can explore.</h2>
+           <!-- <p>
+                This section makes the homepage longer and more engaging by surfacing active products
+                directly on the landing page.
+            </p>-->
+        </div>
+
+        {% if featured_products %}
+            <div class="product-grid home-product-grid">
+                {% for product in featured_products %}
+                    <article class="product-card home-product-card">
+                        <img src="{{ product.image.url }}" alt="{{ product.title }}" loading="lazy" decoding="async">
+                        <div class="product-card-body">
+                            <span class="product-tag">{{ product.get_category_display }}</span>
+                            <h2>{{ product.title }}</h2>
+                            <p class="price">Tshs {{ product.price }}</p>
+                            <p>{{ product.description|truncatechars:110 }}</p>
+                            <p class="home-product-meta">
+                                <span>{{ product.location }}</span>
+                                <span>{{ product.seller.full_name|default:product.seller.email }}</span>
+                            </p>
+                            <a href="{% url 'products:detail' product.pk %}" class="btn">View Details</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No active products yet</h3>
+                <p>Once students start posting, listing images will appear here and help the homepage feel alive.</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'products:create' %}" class="btn">Post the First Product</a>
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn">Join and Start Posting</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!--<section class="home-section">
+    <div class="container home-layout-split">
+        <div class="home-copy-panel">
+            <div class="section-heading">
+                <span class="section-tag">How it works</span>
+                <h2>A simple flow that keeps the marketplace easy to use.</h2>
+                <p>Students can browse, post, and manage requests without hunting through the site.</p>
+            </div>
+
+            <div class="step-list">
+                <article class="step-card">
+                    <span class="step-number">01</span>
+                    <div>
+                        <h3>Create an account</h3>
+                        <p>Students register, log in, and get access to buying, browsing, and posting tools.</p>
+                    </div>
+                </article>
+                <article class="step-card">
+                    <span class="step-number">02</span>
+                    <div>
+                        <h3>Browse or post products</h3>
+                        <p>You can compare listings or publish your own product with an image and clear details.</p>
+                    </div>
+                </article>
+                <article class="step-card">
+                    <span class="step-number">03</span>
+                    <div>
+                        <h3>Connect and complete the deal</h3>
+                        <p>Buyers request what they need and sellers manage interest in a more organized way.</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div class="category-grid">
+            {% for category in category_spotlights %}
+                <article class="category-card">
+                    <span class="category-count">{{ category.count }} live</span>
+                    <h3>{{ category.label }}</h3>
+                    <p>{{ category.description }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>-->
+
+<section class="home-section">
+    <div class="container cta-panel">
+        <div>
+            <span class="section-tag">Ready to grow the marketplace?</span>
+            <h2>Explore listings, compare products, or post what you want to sell.</h2>
+            <p>
+                You can browse available products first, then create an account when ready to order or sell.
+            </p>
+        </div>
+
+        <div class="cta-actions">
+            <a href="{% url 'products:list' %}" class="btn">Explore Listings</a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'products:create' %}" class="btn btn-secondary">Post Now</a>
+            {% else %}
+                <a href="{% url 'accounts:register' %}" class="btn btn-secondary">Sign Up Free</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

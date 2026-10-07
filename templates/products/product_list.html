@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Products | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="products-section">
+    <div class="container">
+        <div class="market-toolbar">
+            <div>
+                <span class="section-tag">ARU Market</span>
+                <h1>Products</h1>
+            </div>
+
+            <form class="search-box" method="get" action="{% url 'products:list' %}">
+                {% if selected_category %}
+                    <input type="hidden" name="category" value="{{ selected_category }}">
+                {% endif %}
+                <input
+                    type="search"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Search products..."
+                    aria-label="Search products"
+                >
+                <button class="btn" type="submit">Search</button>
+            </form>
+        </div>
+
+        <div class="market-category-strip" aria-label="Product categories">
+            <a class="market-category-tile{% if not selected_category %} active{% endif %}" href="{% url 'products:list' %}{% if query %}?q={{ query|urlencode }}{% endif %}">
+                <span class="category-icon" aria-hidden="true">ALL</span>
+                <strong>All</strong>
+                <small>{{ total_products }} live</small>
+            </a>
+
+            {% for category in categories %}
+                <a class="market-category-tile{% if selected_category == category.code %} active{% endif %}" href="{% url 'products:list' %}?category={{ category.code }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}">
+                    <span class="category-icon" aria-hidden="true">{{ category.icon }}</span>
+                    <strong>{{ category.label }}</strong>
+                    <small>{{ category.count }} live</small>
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if query or selected_category_label %}
+            <p class="filter-summary">
+                Showing results{% if query %} for "{{ query }}"{% endif %}{% if selected_category_label %} in {{ selected_category_label }}{% endif %}.
+                <a href="{% url 'products:list' %}">Clear filters</a>
+            </p>
+        {% endif %}
+
+        {% if products %}
+            <div class="product-grid">
+                {% for product in products %}
+                    <article class="product-card">
+                        <img src="{{ product.image.url }}" alt="{{ product.title }}" loading="lazy" decoding="async">
+                        <div class="product-card-body">
+                            <span class="product-tag">{{ product.get_category_display }}</span>
+                            <h2>{{ product.title }}</h2>
+                            <p class="price">Tshs {{ product.price }}</p>
+                            <p>{{ product.location }}</p>
+                            <a href="{% url 'products:detail' product.pk %}" class="btn">View Details</a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            {% if page_obj.has_other_pages %}
+                <nav class="pagination" aria-label="Product pages">
+                    {% if page_obj.has_previous %}
+                        <a class="pagination-link" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>
+                    {% endif %}
+
+                    <span class="pagination-status">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                    </span>
+
+                    {% if page_obj.has_next %}
+                        <a class="pagination-link" href="?{% if page_query %}{{ page_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <p>No products are available yet.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete Signup | Student Market Place{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <h1>Finish creating your account</h1>
+        <p>We received your email from Google. Add the remaining details below to continue.</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Continue</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

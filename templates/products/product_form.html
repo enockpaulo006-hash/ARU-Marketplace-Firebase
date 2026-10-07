@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Post Product | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="auth-section product-batch-section">
+    <div class="container auth-card product-batch-shell">
+        <div class="auth-options">
+            <h1>Post Product</h1>
+            <p>Start with one item. If you want to post more products before submitting, click Add Another Item.</p>
+        </div>
+
+        <form
+            method="post"
+            enctype="multipart/form-data"
+            class="product-batch-form"
+            data-formset-root
+            data-formset-prefix="products"
+        >
+            {% csrf_token %}
+            {{ formset.management_form }}
+
+            {% if formset.non_form_errors %}
+                <div class="message error">
+                    {% for error in formset.non_form_errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="product-batch-list" data-formset-forms>
+                {% for form in formset %}
+                    <article class="product-batch-item" data-formset-item>
+                        <div class="product-batch-item-header">
+                            <h2 class="product-batch-title">Item {{ forloop.counter }}</h2>
+                            <button type="button" class="btn btn-danger product-batch-remove" data-formset-remove>
+                                Remove
+                            </button>
+                        </div>
+
+                        {% for hidden_field in form.hidden_fields %}
+                            {{ hidden_field }}
+                        {% endfor %}
+
+                        <div class="product-batch-grid">
+                            {% for field in form.visible_fields %}
+                                <div class="product-batch-field{% if field.name == 'description' or field.name == 'image' %} product-batch-field-wide{% endif %}">
+                                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="auth-note">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {{ field.errors }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+
+            <div class="product-batch-actions">
+                <button type="button" class="btn product-batch-add" data-formset-add>Add Another Item</button>
+                <button type="submit" class="btn">Post Products</button>
+            </div>
+        </form>
+
+        <template data-formset-template>
+            <article class="product-batch-item" data-formset-item>
+                <div class="product-batch-item-header">
+                    <h2 class="product-batch-title">Item</h2>
+                    <button type="button" class="btn btn-danger product-batch-remove" data-formset-remove>
+                        Remove
+                    </button>
+                </div>
+
+                {% for hidden_field in formset.empty_form.hidden_fields %}
+                    {{ hidden_field }}
+                {% endfor %}
+
+                <div class="product-batch-grid">
+                    {% for field in formset.empty_form.visible_fields %}
+                        <div class="product-batch-field{% if field.name == 'description' or field.name == 'image' %} product-batch-field-wide{% endif %}">
+                            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <small class="auth-note">{{ field.help_text }}</small>
+                            {% endif %}
+                            {{ field.errors }}
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </template>
+    </div>
+</section>
+{% endblock %}

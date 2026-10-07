@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Complete Sale | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <h1>Complete Sale</h1>
+        <p><strong>Product:</strong> {{ order.product.title }}</p>
+        <p><strong>Buyer:</strong> {{ order.buyer.full_name }}</p>
+        <p><strong>Platform Fee:</strong> TSh 1000</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="product-batch-actions">
+                <button type="submit" class="btn">Complete Sale</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Received Requests | ARU student Market{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="products-section">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1>Received Requests</h1>
+        </div>
+        <p class="auth-note">Requests older than 7 days will be deleted automatically.</p>
+
+        {% if orders %}
+            <div class="product-grid">
+                {% for order in orders %}
+                    <article class="product-card">
+                        <div class="product-card-body">
+                            <h2>{{ order.product.title }}</h2>
+                            <p><strong>Buyer:</strong> {{ order.buyer.full_name }}</p>
+                            <p><strong>Buyer Phone:</strong> {{ order.buyer_phone }}</p>
+                            <p><strong>Status:</strong> {{ order.get_status_display }}</p>
+                            <p>{{ order.order_message }}</p>
+                            {% if order.status != "completed" and order.status != "cancelled" %}
+                                <a href="{% url 'sales:complete_sale' order.id %}" class="btn">Complete Sale</a>
+                            {% endif %}
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>You have no visible requests in the last 7 days.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

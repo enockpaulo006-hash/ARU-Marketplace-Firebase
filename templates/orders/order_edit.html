@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Order | Student Market Place{% endblock %}
+
+{% block content %}
+{% include 'includes/breadcrumb.html' %}
+<section class="auth-section">
+    <div class="container auth-card">
+        <div class="auth-options">
+            <h1>Edit Order</h1>
+            <p>Update your order details below. This is allowed only within 3 hours after placing the order.</p>
+        </div>
+
+        <p><strong>Product:</strong> {{ order.product.title }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="product-batch-actions">
+                <button type="submit" class="btn">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</section>
+{% endblock %}

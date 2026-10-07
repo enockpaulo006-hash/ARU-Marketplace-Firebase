@@ -1,0 +1,100 @@
+{% with current_app=request.resolver_match.app_name current_url=request.resolver_match.url_name %}
+<nav class="site-nav">
+    <div class="container nav-inner">
+        <a href="{% url 'core:home' %}" class="brand" aria-label="ARU Student Market Place home">
+            <span class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 72 72" class="brand-mark-svg" role="presentation" focusable="false">
+                    <defs>
+                        <linearGradient id="aru-market-logo-shell" x1="10%" y1="8%" x2="92%" y2="92%">
+                            <stop offset="0%" stop-color="#2a74bf"></stop>
+                            <stop offset="100%" stop-color="#113f72"></stop>
+                        </linearGradient>
+                        <linearGradient id="aru-market-logo-flare" x1="12%" y1="10%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#ee9141"></stop>
+                            <stop offset="100%" stop-color="#c96619"></stop>
+                        </linearGradient>
+                    </defs>
+                    <rect x="5" y="5" width="62" height="62" rx="20" fill="url(#aru-market-logo-shell)"></rect>
+                    <path d="M46 10c8 2 14 9 16 17-7-3-14-5-21-5z" fill="url(#aru-market-logo-flare)"></path>
+                    <path d="M20 54 35 18 50 54" fill="none" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                    <path d="M28 39h14" fill="none" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round"></path>
+                    <path d="M21 57c5 2 10 3 14 3 5 0 10-1 16-3" fill="none" stroke="#899a2c" stroke-width="3.2" stroke-linecap="round"></path>
+                    <circle cx="54" cy="20" r="4.3" fill="#f6dcc0"></circle>
+                </svg>
+            </span>
+            <span class="brand-word">
+                <span class="brand-word-core">ARU</span><span class="brand-word-accent">Market</span>
+            </span>
+        </a>
+
+        <button class="nav-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false" aria-controls="primary-navigation">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
+        <div class="nav-links" id="primary-navigation">
+            <a href="{% url 'core:home' %}" class="{% if current_app == 'core' %}is-active{% endif %}">Home</a>
+            <a href="{% url 'products:list' %}" class="{% if current_app == 'products' %}is-active{% endif %}">Products</a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'products:create' %}" class="{% if current_url == 'create' %}is-active{% endif %}">Post Product</a>
+                <a href="{% url 'products:my_products' %}" class="{% if current_url == 'my_products' %}is-active{% endif %}">My Products</a>
+                <a href="{% url 'orders:my_orders' %}" class="{% if current_url == 'my_orders' %}is-active{% endif %}">My Orders</a>
+                <a href="{% url 'orders:received_requests' %}" class="{% if current_url == 'received_requests' %}is-active{% endif %}">Received Requests</a>
+                <a href="{% url 'accounts:profile' %}" class="{% if current_url == 'profile' %}is-active{% endif %}">Profile</a>
+                <a href="{% url 'accounts:logout' %}" class="nav-link-quiet">Logout</a>
+                {% if user.can_access_admin_panel %}
+                  <!-- <a href="{% url 'admin:index' %}" class="nav-link-admin">Admin</a>-->
+                {% endif %}
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="nav-link-quiet">Login</a>
+                <a href="{% url 'accounts:register' %}" class="nav-link-strong">Sign Up</a>
+                
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<nav class="mobile-bottom-nav" aria-label="Important mobile navigation">
+    <a href="{% url 'core:home' %}" class="{% if current_app == 'core' %}is-active{% endif %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 11.4 12 4l9 7.4v8.1a1.5 1.5 0 0 1-1.5 1.5h-4.4v-6.1H8.9V21H4.5A1.5 1.5 0 0 1 3 19.5z"></path>
+        </svg>
+        <span>Home</span>
+    </a>
+    <a href="{% url 'products:list' %}" class="{% if current_app == 'products' and current_url != 'create' %}is-active{% endif %}">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M5 5.8A1.8 1.8 0 0 1 6.8 4h10.4A1.8 1.8 0 0 1 19 5.8v12.4a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 18.2zM8 8h8M8 12h8M8 16h5"></path>
+        </svg>
+        <span>Products</span>
+    </a>
+    {% if user.is_authenticated %}
+        <a href="{% url 'products:create' %}" class="mobile-bottom-nav-primary{% if current_url == 'create' %} is-active{% endif %}" aria-label="Add product">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            <span>Add</span>
+        </a>
+        <a href="{% url 'accounts:profile' %}" class="{% if current_url == 'profile' %}is-active{% endif %}">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 12.2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20c1.1-3.5 4-5.4 7.5-5.4s6.4 1.9 7.5 5.4"></path>
+            </svg>
+            <span>Profile</span>
+        </a>
+    {% else %}
+        <a href="{% url 'accounts:login' %}" class="mobile-bottom-nav-primary" aria-label="Login to add product">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            <span>Add</span>
+        </a>
+        <a href="{% url 'accounts:login' %}" class="{% if current_url == 'login' %}is-active{% endif %}">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 12.2a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20c1.1-3.5 4-5.4 7.5-5.4s6.4 1.9 7.5 5.4"></path>
+            </svg>
+            <span>Profile</span>
+        </a>
+    {% endif %}
+</nav>
+{% endwith %}
