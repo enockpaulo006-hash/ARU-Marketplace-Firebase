@@ -62,3 +62,132 @@ button:hover {
     margin-top: 20px;
     text-align: center;
 }
+/* ========================================
+   PRODUCT GRID
+======================================== */
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(220px, 1fr)
+    );
+    gap: 20px;
+}
+
+
+/* ========================================
+   PRODUCT CARD
+======================================== */
+
+.product-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-3px);
+}
+
+
+/* ========================================
+   PRODUCT IMAGE
+======================================== */
+
+.product-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+
+
+/* ========================================
+   PRODUCT CONTENT
+======================================== */
+
+.product-card-content {
+    padding: 15px;
+}
+
+.product-card-content h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+}
+
+
+.product-price {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+
+.product-category,
+.product-location {
+    margin: 6px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+
+/* ========================================
+   VIEW PRODUCT BUTTON
+======================================== */
+
+.view-product-button {
+    margin-top: 12px;
+}
+
+
+/* ========================================
+   EMPTY PRODUCTS
+======================================== */
+
+.empty-products {
+    text-align: center;
+    padding: 30px 15px;
+    color: #666;
+}
+
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 600px) {
+
+    .products-grid {
+        grid-template-columns: repeat(
+            2,
+            minmax(0, 1fr)
+        );
+
+        gap: 12px;
+    }
+
+    .product-image {
+        height: 150px;
+    }
+
+    .product-card-content {
+        padding: 10px;
+    }
+
+    .product-card-content h3 {
+        font-size: 16px;
+    }
+
+    .product-price {
+        font-size: 16px;
+    }
+
+    .product-location,
+    .product-category {
+        font-size: 12px;
+    }
+
+}
