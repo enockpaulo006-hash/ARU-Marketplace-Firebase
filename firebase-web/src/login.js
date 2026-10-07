@@ -15,7 +15,6 @@ document.getElementById("app").innerHTML = `
 
         <h2>Login</h2>
 
-
         <form id="login-form">
 
             <input
@@ -38,7 +37,6 @@ document.getElementById("app").innerHTML = `
 
         </form>
 
-
         <button
             id="forgot-password"
             class="secondary-button"
@@ -47,9 +45,7 @@ document.getElementById("app").innerHTML = `
             Forgot Password?
         </button>
 
-
         <p id="message"></p>
-
 
         <p class="auth-link">
             Don't have an account?
@@ -81,13 +77,11 @@ form.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
-
     const email =
         document.getElementById("email").value.trim();
 
     const password =
         passwordInput.value;
-
 
     try {
 
@@ -119,8 +113,8 @@ form.addEventListener("submit", async (event) => {
         );
 
 
-        // Marketplace dashboard
-        // will be connected here later.
+        // Redirect to marketplace home
+        window.location.href = "/home.html";
 
 
     } catch (error) {
