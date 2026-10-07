@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>ARU Marketplace</title>
+
+    <link
+        rel="stylesheet"
+        href="/src/style.css"
+    >
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header class="marketplace-header">
+
+        <div class="header-content">
+
+            <h1>ARU Marketplace</h1>
+
+            <button
+                id="logout-button"
+                type="button"
+            >
+                Logout
+            </button>
+
+        </div>
+
+    </header>
+
+
+    <!-- Main Content -->
+    <main class="marketplace-container">
+
+        <!-- Welcome -->
+        <section class="welcome-section">
+
+            <h2 id="welcome-message">
+                Welcome to ARU Marketplace
+            </h2>
+
+            <p>
+                Buy and sell products within the ARU community.
+            </p>
+
+        </section>
+
+
+        <!-- Search -->
+        <section class="search-section">
+
+            <input
+                type="search"
+                id="search-input"
+                placeholder="Search products..."
+            >
+
+        </section>
+
+
+        <!-- Categories -->
+        <section class="categories-section">
+
+            <h2>Categories</h2>
+
+            <div class="categories-grid">
+
+                <button
+                    class="category-card"
+                    data-category="electronics"
+                >
+                    📱
+                    <span>Electronics</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="phones_accessories"
+                >
+                    📲
+                    <span>Phones & Accessories</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="books_notes"
+                >
+                    📚
+                    <span>Books & Notes</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="fashion"
+                >
+                    👕
+                    <span>Fashion</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="hostel_items"
+                >
+                    🛏️
+                    <span>Hostel Items</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="services"
+                >
+                    🛠️
+                    <span>Services</span>
+                </button>
+
+                <button
+                    class="category-card"
+                    data-category="other"
+                >
+                    📦
+                    <span>Other</span>
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- Products -->
+        <section class="products-section">
+
+            <div class="section-heading">
+
+                <h2>Latest Products</h2>
+
+            </div>
+
+            <div
+                id="products-container"
+                class="products-grid"
+            >
+
+                <p class="empty-products">
+                    Products will appear here.
+                </p>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-navigation">
+
+        <a
+            href="/home.html"
+            class="nav-item active"
+        >
+            🏠
+            <span>Home</span>
+        </a>
+
+        <a
+            href="#"
+            class="nav-item"
+            id="orders-link"
+        >
+            📦
+            <span>Orders</span>
+        </a>
+
+        <a
+            href="#"
+            class="nav-item"
+            id="sell-link"
+        >
+            ➕
+            <span>Sell</span>
+        </a>
+
+        <a
+            href="#"
+            class="nav-item"
+            id="profile-link"
+        >
+            👤
+            <span>Profile</span>
+        </a>
+
+    </nav>
+
+
+    <script type="module" src="/src/home.js"></script>
+
+</body>
+
+</html>
