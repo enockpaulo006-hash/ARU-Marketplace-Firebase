@@ -878,3 +878,8 @@ function showSellMessage(message, type) {
         behavior: "smooth"
     });
 }
+// ========================================
+// INITIAL PRODUCT FORM
+// ========================================
+
+createProductForm();
