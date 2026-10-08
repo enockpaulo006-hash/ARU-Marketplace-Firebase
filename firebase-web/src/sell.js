@@ -802,10 +802,11 @@ submitAllButton.addEventListener("click", async () => {
 
                 location: location,
 
-                status: "active",
-
+                status: "pending",
+                rejectionReason: "",
+                reviewedBy: "",
+                reviewedAt: null,
                 createdAt: serverTimestamp(),
-
                 updatedAt: serverTimestamp()
             };
 
@@ -828,7 +829,7 @@ submitAllButton.addEventListener("click", async () => {
         // ------------------------------------------
 
         showSellMessage(
-            `Successfully listed ${savedProducts} product${savedProducts === 1 ? "" : "s"} with ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"}.`,
+            `Successfully submitted ${savedProducts} product${savedProducts === 1 ? "" : "s"} for review with ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"}.`,
             "success"
         );
 
