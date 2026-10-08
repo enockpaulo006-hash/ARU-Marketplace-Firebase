@@ -59,7 +59,7 @@ body {
 
 
 /* ========================================
-   INPUTS
+   AUTH INPUTS
 ======================================== */
 
 .auth-container input,
@@ -84,7 +84,7 @@ body {
 
 
 /* ========================================
-   BUTTONS
+   AUTH BUTTONS
 ======================================== */
 
 .auth-container button {
@@ -114,7 +114,7 @@ body {
 
 
 /* ========================================
-   FORGOT PASSWORD BUTTON
+   FORGOT PASSWORD
 ======================================== */
 
 #forgot-password {
@@ -123,7 +123,7 @@ body {
 
 
 /* ========================================
-   MESSAGE
+   AUTH MESSAGE
 ======================================== */
 
 #message {
@@ -158,44 +158,297 @@ body {
 
 
 /* ========================================
-   MOBILE AUTHENTICATION
+   MARKETPLACE HEADER
 ======================================== */
 
-@media (max-width: 600px) {
-
-    .auth-container {
-        width: calc(100% - 24px);
-        margin: 24px auto;
-        padding: 24px 18px;
-        border-radius: 14px;
-    }
-
-    .auth-container h1 {
-        font-size: 28px;
-    }
-
-    .auth-container h2 {
-        font-size: 22px;
-        margin-bottom: 24px;
-    }
-
-    .auth-container input,
-    .auth-container select,
-    .auth-container button {
-        font-size: 16px;
-    }
-
+.marketplace-header {
+    background: #111;
+    color: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
+
+.header-content {
+    width: min(1200px, 94%);
+    min-height: 68px;
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand i {
+    font-size: 25px;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: 21px;
+    font-weight: 700;
+}
+
+
+/* ========================================
+   LOGOUT BUTTON
+======================================== */
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    min-height: 40px;
+    padding: 8px 14px;
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+
+    background: transparent;
+    color: #ffffff;
+
+    font-size: 14px;
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.logout-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+
+/* ========================================
+   MARKETPLACE MAIN CONTAINER
+======================================== */
+
+.marketplace-container {
+    width: min(1200px, 94%);
+    margin: 0 auto;
+    padding: 28px 0 110px;
+}
+
+
+/* ========================================
+   WELCOME SECTION
+======================================== */
+
+.welcome-section {
+    margin-bottom: 24px;
+}
+
+.welcome-label,
+.section-label {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #777;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+.welcome-section h2 {
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.25;
+}
+
+.welcome-description {
+    margin: 8px 0 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   SEARCH
+======================================== */
+
+.search-section {
+    margin-bottom: 32px;
+}
+
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+.search-box i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    color: #777;
+    font-size: 18px;
+
+    pointer-events: none;
+}
+
+.search-box input {
+    width: 100%;
+    min-height: 50px;
+
+    padding: 12px 16px 12px 46px;
+
+    border: 1px solid #d7dce1;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    font-size: 16px;
+    outline: none;
+
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.search-box input:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.07);
+}
+
+
+/* ========================================
+   SECTION HEADING
+======================================== */
+
+.section-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.section-heading h2 {
+    margin: 0;
+    font-size: 23px;
+}
+
+
+/* ========================================
+   CATEGORIES
+======================================== */
+
+.categories-section {
+    margin-bottom: 36px;
+}
+
+.categories-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(130px, 1fr)
+    );
+
+    gap: 12px;
+}
+
+.category-card {
+    min-height: 105px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 9px;
+
+    padding: 15px 10px;
+
+    border: 1px solid #e0e4e8;
+    border-radius: 12px;
+
+    background: #ffffff;
+    color: #222;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.category-card i {
+    font-size: 26px;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+    border-color: #111;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
+}
+
+
+/* ========================================
+   VIEW ALL
+======================================== */
+
+.view-all-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    border: none;
+    background: transparent;
+
+    color: #111;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.view-all-button:hover {
+    text-decoration: underline;
+}
+
+
+/* ========================================
+   PRODUCTS SECTION
+======================================== */
+
+.products-section {
+    margin-bottom: 30px;
+}
+
+
 /* ========================================
    PRODUCT GRID
 ======================================== */
 
 .products-grid {
     display: grid;
+
     grid-template-columns: repeat(
         auto-fill,
         minmax(220px, 1fr)
     );
+
     gap: 20px;
 }
 
@@ -205,15 +458,25 @@ body {
 ======================================== */
 
 .product-card {
-    background: white;
+    background: #ffffff;
+
     border-radius: 12px;
+
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-    transition: transform 0.2s ease;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.08);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .product-card:hover {
     transform: translateY(-3px);
+
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.11);
 }
 
 
@@ -224,7 +487,9 @@ body {
 .product-image {
     width: 100%;
     height: 200px;
+
     object-fit: cover;
+
     display: block;
 }
 
@@ -239,20 +504,21 @@ body {
 
 .product-card-content h3 {
     margin: 0 0 10px;
+
     font-size: 18px;
 }
 
-
 .product-price {
     margin: 0 0 8px;
+
     font-size: 18px;
     font-weight: bold;
 }
 
-
 .product-category,
 .product-location {
     margin: 6px 0;
+
     font-size: 14px;
     color: #666;
 }
@@ -263,7 +529,22 @@ body {
 ======================================== */
 
 .view-product-button {
+    width: 100%;
+
     margin-top: 12px;
+
+    min-height: 42px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #111;
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
 }
 
 
@@ -273,8 +554,79 @@ body {
 
 .empty-products {
     text-align: center;
-    padding: 30px 15px;
+
+    padding: 35px 15px;
+
     color: #666;
+
+    background: #ffffff;
+
+    border-radius: 12px;
+
+    border: 1px solid #e5e7eb;
+}
+
+
+/* ========================================
+   BOTTOM NAVIGATION
+======================================== */
+
+.bottom-navigation {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    z-index: 1000;
+
+    display: flex;
+    justify-content: center;
+
+    background: #ffffff;
+
+    border-top: 1px solid #e3e6e9;
+
+    box-shadow:
+        0 -4px 15px rgba(0, 0, 0, 0.06);
+}
+
+.nav-item {
+    width: min(150px, 25%);
+
+    min-height: 68px;
+
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 5px;
+
+    color: #777;
+
+    text-decoration: none;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease;
+}
+
+.nav-item i {
+    font-size: 21px;
+}
+
+.nav-item:hover {
+    color: #111;
+}
+
+.nav-item.active {
+    color: #111;
+    font-weight: 600;
 }
 
 
@@ -284,34 +636,144 @@ body {
 
 @media (max-width: 600px) {
 
-    .products-grid {
-        grid-template-columns: repeat(
-            2,
-            minmax(0, 1fr)
-        );
+    .header-content {
+        width: calc(100% - 24px);
+        min-height: 62px;
+    }
 
+    .brand h1 {
+        font-size: 18px;
+    }
+
+    .brand i {
+        font-size: 21px;
+    }
+
+    .logout-button {
+        min-height: 38px;
+        padding: 7px 10px;
+    }
+
+    .logout-button span {
+        display: none;
+    }
+
+
+    .marketplace-container {
+        width: calc(100% - 24px);
+        padding-top: 22px;
+        padding-bottom: 95px;
+    }
+
+
+    .welcome-section h2 {
+        font-size: 23px;
+    }
+
+
+    .welcome-description {
+        font-size: 14px;
+    }
+
+
+    .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+
+    .category-card {
+        min-height: 95px;
+        padding: 12px 8px;
+    }
+
+
+    .category-card i {
+        font-size: 23px;
+    }
+
+
+    .category-card span {
+        font-size: 13px;
+        text-align: center;
+    }
+
+
+    .section-heading h2 {
+        font-size: 20px;
+    }
+
+
+    .products-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 12px;
     }
+
 
     .product-image {
         height: 150px;
     }
 
+
     .product-card-content {
         padding: 10px;
     }
 
+
     .product-card-content h3 {
-        font-size: 16px;
+        font-size: 15px;
+        line-height: 1.3;
     }
+
 
     .product-price {
         font-size: 16px;
     }
 
+
     .product-location,
     .product-category {
         font-size: 12px;
+    }
+
+
+    .view-product-button {
+        min-height: 40px;
+        font-size: 13px;
+    }
+
+
+    .nav-item {
+        min-height: 64px;
+    }
+
+}
+
+
+/* ========================================
+   VERY SMALL PHONES
+======================================== */
+
+@media (max-width: 380px) {
+
+    .marketplace-container {
+        width: calc(100% - 18px);
+    }
+
+    .categories-grid {
+        gap: 8px;
+    }
+
+    .category-card {
+        min-height: 90px;
+    }
+
+    .products-grid {
+        gap: 8px;
+    }
+
+    .product-image {
+        height: 135px;
     }
 
 }
