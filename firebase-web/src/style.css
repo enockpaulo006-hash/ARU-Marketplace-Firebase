@@ -554,6 +554,7 @@ body {
 
 .empty-products {
     text-align: center;
+    grid-column: 1 / -1;
 
     padding: 35px 15px;
 
