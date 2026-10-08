@@ -1,126 +1,80 @@
 import "./style.css";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebase";
 
-import {
-    onAuthStateChanged
-} from "firebase/auth";
+const MAX_IMAGES = 10;
+const MAX_SOURCE_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_OUTPUT_FILE_SIZE = 500 * 1024; // ~500 KB
+const MAX_IMAGE_DIMENSION = 1600;
+const JPEG_QUALITY = 0.82;
 
-import { auth } from "./firebase.js";
-
-
-const productsList =
-    document.getElementById("products-list");
-
-const addProductButton =
-    document.getElementById("add-product-button");
-
-const submitAllButton =
-    document.getElementById("submit-all-products");
-
-const message =
-    document.getElementById("sell-message");
-
+const productsList = document.getElementById("products-list");
+const addProductButton = document.getElementById("add-product-button");
+const submitAllButton = document.getElementById("submit-all-products");
+const sellMessage = document.getElementById("sell-message");
 
 let productCount = 0;
+let currentUser = null;
 
 
-/* ========================================
-   AUTHENTICATION
-======================================== */
+// --------------------------------------------------
+// AUTH PROTECTION
+// --------------------------------------------------
 
 onAuthStateChanged(auth, (user) => {
-
     if (!user) {
-
-        window.location.href =
-            "/login.html";
-
+        window.location.href = "/login.html";
         return;
     }
 
+    currentUser = user;
+
+    if (productsList.children.length === 0) {
+        createProductForm();
+    }
 });
 
 
-/* ========================================
-   CREATE PRODUCT FORM
-======================================== */
+// --------------------------------------------------
+// CREATE PRODUCT FORM
+// --------------------------------------------------
 
 function createProductForm() {
-
     productCount++;
 
-    const productNumber =
-        productCount;
-
-
-    const productCard =
-        document.createElement("section");
-
-    productCard.className =
-        "sell-form-card product-form-card";
-
-    productCard.dataset.productNumber =
-        productNumber;
-
+    const productCard = document.createElement("div");
+    productCard.className = "product-form-card";
+    productCard.dataset.productNumber = productCount;
 
     productCard.innerHTML = `
-
         <div class="product-form-header">
-
             <div>
-
-                <p class="section-label">
-                    Listing ${productNumber}
-                </p>
-
-                <h3>
-                    Product ${productNumber}
-                </h3>
-
+                <span class="product-number">Product ${productCount}</span>
+                <h2>Create your listing</h2>
             </div>
 
             ${
-                productNumber > 1
-                ? `
-                    <button
-                        type="button"
-                        class="remove-product-button"
-                        aria-label="Remove product"
-                    >
+                productCount > 1
+                    ? `<button type="button" class="remove-product-button">
                         <i class="bi bi-trash"></i>
-                    </button>
-                `
-                : ""
+                        Remove
+                    </button>`
+                    : ""
             }
-
         </div>
 
-
-        <!-- PRODUCT IMAGES -->
-
         <div class="form-group">
+            <label>Product photos</label>
 
-            <label>
-                Product Photos
-            </label>
-
-            <div class="image-upload">
-
+            <div class="image-upload-box">
                 <i class="bi bi-images"></i>
 
-                <p>
-                   Add a photo of your product
-                </p>
+                <p>Add a photo of your product</p>
 
-                <span>
-                    You can select multiple images
-                </span>
+                
 
-                <label
-                    class="choose-images-button"
-                >
-
-                    <i class="bi bi-plus"></i>
-
+                <label class="choose-images-button">
+                    <i class="bi bi-plus-circle"></i>
                     Add Photos
 
                     <input
@@ -129,557 +83,581 @@ function createProductForm() {
                         accept="image/jpeg,image/png,image/webp"
                         multiple
                     >
-
                 </label>
-
             </div>
 
             <div class="image-preview-grid"></div>
-
         </div>
 
-
-        <!-- PRODUCT NAME -->
-
         <div class="form-group">
-
-            <label
-                for="product-title-${productNumber}"
-            >
-                Product Name
-            </label>
+            <label for="title-${productCount}">Product title</label>
 
             <input
                 type="text"
-                id="product-title-${productNumber}"
+                id="title-${productCount}"
                 class="product-title"
                 placeholder="e.g. HP Laptop"
                 required
             >
-
         </div>
-
-
-        <!-- CATEGORY -->
-
-        <div class="form-group">
-
-            <label
-                for="product-category-${productNumber}"
-            >
-                Category
-            </label>
-
-            <select
-                id="product-category-${productNumber}"
-                class="product-category"
-                required
-            >
-
-                <option value="">
-                    Select a category
-                </option>
-
-                <option value="electronics">
-                    Electronics
-                </option>
-
-                <option value="phones_accessories">
-                    Phones & Accessories
-                </option>
-
-                <option value="books_notes">
-                    Books & Notes
-                </option>
-
-                <option value="fashion">
-                    Fashion
-                </option>
-
-                <option value="hostel_items">
-                    Hostel Items
-                </option>
-
-                <option value="services">
-                    Services
-                </option>
-
-                <option value="other">
-                    Other
-                </option>
-
-            </select>
-
-        </div>
-
-
-        <!-- PRICE + CONDITION -->
 
         <div class="form-row">
+            <div class="form-group">
+                <label>Category</label>
 
+                <select class="product-category" required>
+                    <option value="">Select category</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="phones_accessories">Phones & Accessories</option>
+                    <option value="books_notes">Books & Notes</option>
+                    <option value="fashion">Fashion</option>
+                    <option value="hostel_items">Hostel Items</option>
+                    <option value="services">Services</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
 
             <div class="form-group">
-
-                <label
-                    for="product-price-${productNumber}"
-                >
-                    Price (TZS)
-                </label>
+                <label>Price (TZS)</label>
 
                 <input
                     type="number"
-                    id="product-price-${productNumber}"
                     class="product-price"
-                    placeholder="e.g. 250000"
+                    placeholder="e.g. 350000"
                     min="0"
                     required
                 >
-
             </div>
+        </div>
 
+        <div class="form-row">
+            <div class="form-group">
+                <label>Condition</label>
+
+                <select class="product-condition" required>
+                    <option value="">Select condition</option>
+                    <option value="new">New</option>
+                    <option value="used">Used</option>
+                </select>
+            </div>
 
             <div class="form-group">
+                <label>Location</label>
 
-                <label
-                    for="product-condition-${productNumber}"
-                >
-                    Condition
-                </label>
-
-                <select
-                    id="product-condition-${productNumber}"
-                    class="product-condition"
+                <input
+                    type="text"
+                    class="product-location"
+                    placeholder="e.g. ARU"
                     required
                 >
-
-                    <option value="">
-                        Select condition
-                    </option>
-
-                    <option value="new">
-                        New
-                    </option>
-
-                    <option value="used">
-                        Used
-                    </option>
-
-                    <option value="like_new">
-                        Like New
-                    </option>
-
-                </select>
-
             </div>
-
-
         </div>
 
-
-        <!-- LOCATION -->
-
         <div class="form-group">
-
-            <label
-                for="product-location-${productNumber}"
-            >
-                Location
-            </label>
-
-            <input
-                type="text"
-                id="product-location-${productNumber}"
-                class="product-location"
-                placeholder="e.g. Ardhi University"
-                required
-            >
-
-        </div>
-
-
-        <!-- DESCRIPTION -->
-
-        <div class="form-group">
-
-            <label
-                for="product-description-${productNumber}"
-            >
-                Description
-            </label>
+            <label>Description</label>
 
             <textarea
-                id="product-description-${productNumber}"
                 class="product-description"
-                rows="5"
-                placeholder="Describe this product..."
+                rows="4"
+                placeholder="Describe your product..."
                 required
             ></textarea>
-
         </div>
-
-
-        <!-- INFO -->
-
-        <div class="form-information">
-
-            <i class="bi bi-info-circle"></i>
-
-            <p>
-                All photos above belong to this one product.
-                Buyers will be able to view them together.
-            </p>
-
-        </div>
-
     `;
 
+    productsList.appendChild(productCard);
 
-    productsList.appendChild(
-        productCard
+    setupProductImageUpload(productCard);
+
+    const removeButton = productCard.querySelector(
+        ".remove-product-button"
     );
-
-
-    setupProductImageUpload(
-        productCard
-    );
-
-
-    const removeButton =
-        productCard.querySelector(
-            ".remove-product-button"
-        );
-
 
     if (removeButton) {
-
-        removeButton.addEventListener(
-            "click",
-            () => {
-
-                productCard.remove();
-
-                renumberProducts();
-
-            }
-        );
-
-    }
-
-}
-
-
-/* ========================================
-   IMAGE SELECTION
-======================================== */
-
-function setupProductImageUpload(
-    productCard
-) {
-
-    const input =
-        productCard.querySelector(
-            ".product-images-input"
-        );
-
-    const previewGrid =
-        productCard.querySelector(
-            ".image-preview-grid"
-        );
-
-
-    let selectedFiles = [];
-
-
-    input.addEventListener(
-        "change",
-        () => {
-
-            const newFiles =
-                Array.from(input.files);
-
-
-            selectedFiles = [
-                ...selectedFiles,
-                ...newFiles
-            ];
-
-
-            // Remove duplicate files
-            selectedFiles =
-                selectedFiles.filter(
-                    (file, index, array) =>
-                        index === array.findIndex(
-                            (item) =>
-                                item.name === file.name &&
-                                item.size === file.size &&
-                                item.lastModified === file.lastModified
-                        )
-                );
-
-
-            renderImagePreviews();
-
-
-            // Clear native input
-            input.value = "";
-
-        }
-    );
-
-
-    function renderImagePreviews() {
-
-        previewGrid.innerHTML = "";
-
-
-        selectedFiles.forEach(
-            (file, index) => {
-
-                const imageUrl =
-                    URL.createObjectURL(file);
-
-
-                const preview =
-                    document.createElement("div");
-
-                preview.className =
-                    "image-preview";
-
-
-                preview.innerHTML = `
-
-                    <img
-                        src="${imageUrl}"
-                        alt="Product image ${index + 1}"
-                    >
-
-                    <button
-                        type="button"
-                        class="remove-image-button"
-                        aria-label="Remove image"
-                    >
-                        <i class="bi bi-x"></i>
-                    </button>
-
-                    <span>
-                        Photo ${index + 1}
-                    </span>
-
-                `;
-
-
-                const removeButton =
-                    preview.querySelector(
-                        ".remove-image-button"
-                    );
-
-
-                removeButton.addEventListener(
-                    "click",
-                    () => {
-
-                        selectedFiles.splice(
-                            index,
-                            1
-                        );
-
-
-                        URL.revokeObjectURL(
-                            imageUrl
-                        );
-
-
-                        renderImagePreviews();
-
-                    }
-                );
-
-
-                previewGrid.appendChild(
-                    preview
-                );
-
-            }
-        );
-
-
-        // Store files on the product card
-        productCard.selectedFiles =
-            selectedFiles;
-
-    }
-
-}
-
-
-/* ========================================
-   RENUMBER PRODUCTS
-======================================== */
-
-function renumberProducts() {
-
-    const cards =
-        productsList.querySelectorAll(
-            ".product-form-card"
-        );
-
-
-    cards.forEach(
-        (card, index) => {
-
-            const number =
-                index + 1;
-
-            card.dataset.productNumber =
-                number;
-
-
-            const label =
-                card.querySelector(
-                    ".section-label"
-                );
-
-            const title =
-                card.querySelector(
-                    ".product-form-header h3"
-                );
-
-
-            if (label) {
-
-                label.textContent =
-                    `Listing ${number}`;
-
-            }
-
-
-            if (title) {
-
-                title.textContent =
-                    `Product ${number}`;
-
-            }
-
-        }
-    );
-
-}
-
-
-/* ========================================
-   ADD PRODUCT
-======================================== */
-
-addProductButton.addEventListener(
-    "click",
-    () => {
-
-        createProductForm();
-
-        const cards =
-            productsList.querySelectorAll(
-                ".product-form-card"
-            );
-
-
-        const lastCard =
-            cards[cards.length - 1];
-
-
-        lastCard.scrollIntoView({
-            behavior: "smooth",
-            block: "start"
+        removeButton.addEventListener("click", () => {
+            productCard.remove();
+            renumberProducts();
         });
-
     }
-);
+}
 
 
-/* ========================================
-   SUBMIT ALL PRODUCTS
-======================================== */
+// --------------------------------------------------
+// IMAGE UPLOAD + COMPRESSION
+// --------------------------------------------------
 
-submitAllButton.addEventListener(
-    "click",
-    () => {
+function setupProductImageUpload(productCard) {
+    const input = productCard.querySelector(".product-images-input");
+    const previewGrid = productCard.querySelector(".image-preview-grid");
 
-        const cards =
-            productsList.querySelectorAll(
-                ".product-form-card"
-            );
+    productCard.selectedFiles = [];
 
+    input.addEventListener("change", async (event) => {
+        const selectedFiles = Array.from(event.target.files);
 
-        if (cards.length === 0) {
-
-            message.textContent =
-                "Please add at least one product.";
-
+        if (!selectedFiles.length) {
             return;
         }
 
+        if (
+            productCard.selectedFiles.length + selectedFiles.length >
+            MAX_IMAGES
+        ) {
+            showSellMessage(
+                `You can add up to ${MAX_IMAGES} photos per product.`,
+                "error"
+            );
 
-        let valid = true;
+            input.value = "";
+            return;
+        }
 
-
-        cards.forEach(
-            (card) => {
-
-                const requiredFields =
-                    card.querySelectorAll(
-                        "input[required], select[required], textarea[required]"
-                    );
-
-
-                requiredFields.forEach(
-                    (field) => {
-
-                        if (!field.value.trim()) {
-
-                            valid = false;
-
-                            field.reportValidity();
-
-                        }
-
-                    }
+        for (const file of selectedFiles) {
+            if (!file.type.startsWith("image/")) {
+                showSellMessage(
+                    `${file.name} is not a supported image file.`,
+                    "error"
                 );
+                continue;
+            }
+
+            if (file.size > MAX_SOURCE_FILE_SIZE) {
+                showSellMessage(
+                    `${file.name} is larger than 5 MB. Please choose a smaller photo.`,
+                    "error"
+                );
+                continue;
+            }
+
+            const duplicate = productCard.selectedFiles.some(
+                (existingFile) =>
+                    existingFile.name === file.name &&
+                    existingFile.size === file.size &&
+                    existingFile.lastModified === file.lastModified
+            );
+
+            if (duplicate) {
+                continue;
+            }
+
+            try {
+                const optimizedFile = await optimizeImage(file);
+
+                productCard.selectedFiles.push(optimizedFile);
+
+                addImagePreview(
+                    productCard,
+                    optimizedFile,
+                    previewGrid
+                );
+            } catch (error) {
+                console.error("Image optimization failed:", error);
+
+                showSellMessage(
+                    `Could not process ${file.name}. Please try another image.`,
+                    "error"
+                );
+            }
+        }
+
+        input.value = "";
+    });
+}
 
 
-                if (
-                    !card.selectedFiles ||
-                    card.selectedFiles.length === 0
-                ) {
+// --------------------------------------------------
+// OPTIMIZE IMAGE
+// --------------------------------------------------
 
-                    valid = false;
+async function optimizeImage(file) {
+    const image = await loadImage(file);
 
-                    alert(
-                        "Please add at least one image for every product."
+    let width = image.width;
+    let height = image.height;
+
+    // Resize while keeping the original aspect ratio
+    if (
+        width > MAX_IMAGE_DIMENSION ||
+        height > MAX_IMAGE_DIMENSION
+    ) {
+        const scale = Math.min(
+            MAX_IMAGE_DIMENSION / width,
+            MAX_IMAGE_DIMENSION / height
+        );
+
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+    }
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+
+    context.drawImage(
+        image,
+        0,
+        0,
+        width,
+        height
+    );
+
+    let quality = JPEG_QUALITY;
+    let blob = await canvasToBlob(
+        canvas,
+        "image/jpeg",
+        quality
+    );
+
+    // Try to keep the output close to 500 KB.
+    // Gradually reduce quality if necessary.
+    while (
+        blob.size > MAX_OUTPUT_FILE_SIZE &&
+        quality > 0.5
+    ) {
+        quality -= 0.05;
+
+        blob = await canvasToBlob(
+            canvas,
+            "image/jpeg",
+            quality
+        );
+    }
+
+    // If the image is still too large,
+    // reduce its dimensions and compress again.
+    while (
+        blob.size > MAX_OUTPUT_FILE_SIZE &&
+        width > 800
+    ) {
+        width = Math.round(width * 0.85);
+        height = Math.round(height * 0.85);
+
+        canvas.width = width;
+        canvas.height = height;
+
+        context.drawImage(
+            image,
+            0,
+            0,
+            width,
+            height
+        );
+
+        quality = 0.75;
+
+        blob = await canvasToBlob(
+            canvas,
+            "image/jpeg",
+            quality
+        );
+    }
+
+    return new File(
+        [blob],
+        createOptimizedFileName(file.name),
+        {
+            type: "image/jpeg",
+            lastModified: Date.now()
+        }
+    );
+}
+
+
+// --------------------------------------------------
+// LOAD IMAGE
+// --------------------------------------------------
+
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+
+        const objectUrl = URL.createObjectURL(file);
+
+        image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(image);
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("Unable to load image."));
+        };
+
+        image.src = objectUrl;
+    });
+}
+
+
+// --------------------------------------------------
+// CANVAS TO BLOB
+// --------------------------------------------------
+
+function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    reject(
+                        new Error("Image compression failed.")
                     );
-
+                    return;
                 }
 
-            }
+                resolve(blob);
+            },
+            type,
+            quality
         );
+    });
+}
 
 
-        if (!valid) {
+// --------------------------------------------------
+// CREATE SAFE FILE NAME
+// --------------------------------------------------
 
-            message.textContent =
-                "Please complete all product details.";
+function createOptimizedFileName(originalName) {
+    const baseName = originalName
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9-_]/g, "-")
+        .toLowerCase();
 
-            return;
+    return `${baseName}-optimized.jpg`;
+}
+
+
+// --------------------------------------------------
+// IMAGE PREVIEW
+// --------------------------------------------------
+
+function addImagePreview(
+    productCard,
+    file,
+    previewGrid
+) {
+    const preview = document.createElement("div");
+
+    preview.className = "image-preview";
+
+    const image = document.createElement("img");
+
+    const objectUrl = URL.createObjectURL(file);
+
+    image.src = objectUrl;
+    image.alt = "Product photo";
+
+    const removeButton = document.createElement("button");
+
+    removeButton.type = "button";
+    removeButton.className = "remove-image-button";
+
+    removeButton.innerHTML = `
+        <i class="bi bi-x"></i>
+    `;
+
+    const imageNumber = document.createElement("span");
+
+    imageNumber.className = "image-number";
+
+    imageNumber.textContent =
+        `${productCard.selectedFiles.length}`;
+
+    const imageSize = document.createElement("span");
+
+    imageSize.className = "image-size";
+
+    imageSize.textContent =
+        formatFileSize(file.size);
+
+    removeButton.addEventListener("click", () => {
+        const index =
+            productCard.selectedFiles.indexOf(file);
+
+        if (index !== -1) {
+            productCard.selectedFiles.splice(index, 1);
         }
 
+        URL.revokeObjectURL(objectUrl);
 
-        message.textContent =
-            "All products are ready. Uploading to Firebase will be connected next.";
+        preview.remove();
 
+        refreshImageNumbers(productCard);
+    });
+
+    preview.appendChild(image);
+    preview.appendChild(removeButton);
+    preview.appendChild(imageNumber);
+    preview.appendChild(imageSize);
+
+    previewGrid.appendChild(preview);
+}
+
+
+// --------------------------------------------------
+// REFRESH IMAGE NUMBERS
+// --------------------------------------------------
+
+function refreshImageNumbers(productCard) {
+    const previews =
+        productCard.querySelectorAll(".image-preview");
+
+    previews.forEach((preview, index) => {
+        const number =
+            preview.querySelector(".image-number");
+
+        if (number) {
+            number.textContent = index + 1;
+        }
+    });
+}
+
+
+// --------------------------------------------------
+// FORMAT FILE SIZE
+// --------------------------------------------------
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) {
+        return `${bytes} B`;
     }
-);
+
+    if (bytes < 1024 * 1024) {
+        return `${Math.round(bytes / 1024)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 
-/* ========================================
-   INITIAL PRODUCT
-======================================== */
+// --------------------------------------------------
+// RENUMBER PRODUCTS
+// --------------------------------------------------
 
-createProductForm();
+function renumberProducts() {
+    const cards =
+        productsList.querySelectorAll(".product-form-card");
+
+    cards.forEach((card, index) => {
+        const number = index + 1;
+
+        card.dataset.productNumber = number;
+
+        const productNumber =
+            card.querySelector(".product-number");
+
+        if (productNumber) {
+            productNumber.textContent =
+                `Product ${number}`;
+        }
+    });
+
+    productCount = cards.length;
+}
+
+
+// --------------------------------------------------
+// ADD ANOTHER PRODUCT
+// --------------------------------------------------
+
+addProductButton.addEventListener("click", () => {
+    createProductForm();
+
+    const cards =
+        productsList.querySelectorAll(".product-form-card");
+
+    const lastCard = cards[cards.length - 1];
+
+    lastCard.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+});
+
+
+// --------------------------------------------------
+// SUBMIT ALL PRODUCTS
+// --------------------------------------------------
+
+submitAllButton.addEventListener("click", () => {
+    const cards =
+        productsList.querySelectorAll(".product-form-card");
+
+    if (!cards.length) {
+        showSellMessage(
+            "Please add at least one product.",
+            "error"
+        );
+
+        return;
+    }
+
+    let valid = true;
+
+    cards.forEach((card) => {
+        const title =
+            card.querySelector(".product-title").value.trim();
+
+        const category =
+            card.querySelector(".product-category").value;
+
+        const price =
+            card.querySelector(".product-price").value;
+
+        const condition =
+            card.querySelector(".product-condition").value;
+
+        const location =
+            card.querySelector(".product-location").value.trim();
+
+        const description =
+            card.querySelector(".product-description").value.trim();
+
+        const images =
+            card.selectedFiles || [];
+
+        if (
+            !title ||
+            !category ||
+            !price ||
+            !condition ||
+            !location ||
+            !description ||
+            images.length === 0
+        ) {
+            valid = false;
+        }
+    });
+
+    if (!valid) {
+        showSellMessage(
+            "Please complete all required fields and add at least one photo to each product.",
+            "error"
+        );
+
+        return;
+    }
+
+    showSellMessage(
+        "All products are ready. Uploading to Firebase will be connected next.",
+        "success"
+    );
+});
+
+
+// --------------------------------------------------
+// MESSAGE
+// --------------------------------------------------
+
+function showSellMessage(message, type) {
+    sellMessage.textContent = message;
+
+    sellMessage.className = `sell-message ${type}`;
+
+    window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+    });
+}
