@@ -104,140 +104,285 @@
         </section>
 
 
-        <!-- ====================================
-             CATEGORIES
-        ==================================== -->
+<!-- ====================================
+     CATEGORIES
+==================================== -->
 
-        <section class="categories-section">
+<section class="categories-section">
 
-            <div class="section-heading">
+    <div class="categories-heading">
 
-                <div>
-                    <p class="section-label">
-                        Explore
-                    </p>
+        <div>
+            <p class="section-label">
+                Explore
+            </p>
 
-                    <h2>
-                        Categories
-                    </h2>
-                </div>
+            <h2>
+                Categories
+            </h2>
+        </div>
 
-            </div>
+        <button
+            type="button"
+            id="categories-toggle"
+            class="categories-toggle"
+            aria-expanded="false"
+        >
+            <span>View</span>
+            <i class="bi bi-chevron-down"></i>
+        </button>
 
-
-            <div class="categories-grid">
-
-
-                <button
-                    class="category-card"
-                    data-category="electronics"
-                >
-                    <i class="bi bi-laptop"></i>
-                    <span>Electronics</span>
-                </button>
+    </div>
 
 
-                <button
-                    class="category-card"
-                    data-category="phones_accessories"
-                >
-                    <i class="bi bi-phone"></i>
-                    <span>Phones & Accessories</span>
-                </button>
+    <!-- Compact category icons -->
+
+    <div
+        id="category-icons"
+        class="category-icons"
+    >
+
+        <button
+            type="button"
+            class="category-icon active"
+            data-category="all"
+            title="All Products"
+        >
+            <i class="bi bi-grid"></i>
+            <span>All</span>
+        </button>
 
 
-                <button
-                    class="category-card"
-                    data-category="books_notes"
-                >
-                    <i class="bi bi-book"></i>
-                    <span>Books & Notes</span>
-                </button>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="electronics"
+            title="Electronics"
+        >
+            <i class="bi bi-laptop"></i>
+            <span>Electronics</span>
+        </button>
 
 
-                <button
-                    class="category-card"
-                    data-category="fashion"
-                >
-                    <i class="bi bi-bag"></i>
-                    <span>Fashion</span>
-                </button>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="phones_accessories"
+            title="Phones & Accessories"
+        >
+            <i class="bi bi-phone"></i>
+            <span>Phones</span>
+        </button>
 
 
-                <button
-                    class="category-card"
-                    data-category="hostel_items"
-                >
-                    <i class="bi bi-house"></i>
-                    <span>Hostel Items</span>
-                </button>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="books_notes"
+            title="Books & Notes"
+        >
+            <i class="bi bi-book"></i>
+            <span>Books</span>
+        </button>
 
 
-                <button
-                    class="category-card"
-                    data-category="services"
-                >
-                    <i class="bi bi-tools"></i>
-                    <span>Services</span>
-                </button>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="fashion"
+            title="Fashion"
+        >
+            <i class="bi bi-bag"></i>
+            <span>Fashion</span>
+        </button>
 
 
-                <button
-                    class="category-card"
-                    data-category="other"
-                >
-                    <i class="bi bi-grid"></i>
-                    <span>Other</span>
-                </button>
-
-            </div>
-
-        </section>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="hostel_items"
+            title="Hostel Items"
+        >
+            <i class="bi bi-house"></i>
+            <span>Hostel</span>
+        </button>
 
 
-        <!-- ====================================
-             PRODUCTS
-        ==================================== -->
-
-        <section class="products-section">
-
-            <div class="section-heading">
-
-                <div>
-                    <p class="section-label">
-                        Marketplace
-                    </p>
-
-                    <h2>
-                        Latest Products
-                    </h2>
-                </div>
-
-                <button
-                    type="button"
-                    class="view-all-button"
-                >
-                    View All
-                    <i class="bi bi-arrow-right"></i>
-                </button>
-
-            </div>
+        <button
+            type="button"
+            class="category-icon"
+            data-category="services"
+            title="Services"
+        >
+            <i class="bi bi-tools"></i>
+            <span>Services</span>
+        </button>
 
 
-            <div
-                id="products-container"
-                class="products-grid"
-            >
+        <button
+            type="button"
+            class="category-icon"
+            data-category="other"
+            title="Other"
+        >
+            <i class="bi bi-grid-3x3-gap"></i>
+            <span>Other</span>
+        </button>
 
-                <p class="empty-products">
-                    Products will appear here.
-                </p>
+    </div>
 
-            </div>
 
-        </section>
+    <!-- Expanded category selector -->
 
-    </main>
+    <div
+        id="category-menu"
+        class="category-menu"
+        hidden
+    >
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="all"
+        >
+            <i class="bi bi-grid"></i>
+
+            <span>
+                All Products
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="electronics"
+        >
+            <i class="bi bi-laptop"></i>
+
+            <span>
+                Electronics
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="phones_accessories"
+        >
+            <i class="bi bi-phone"></i>
+
+            <span>
+                Phones & Accessories
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="books_notes"
+        >
+            <i class="bi bi-book"></i>
+
+            <span>
+                Books & Notes
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="fashion"
+        >
+            <i class="bi bi-bag"></i>
+
+            <span>
+                Fashion
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="hostel_items"
+        >
+            <i class="bi bi-house"></i>
+
+            <span>
+                Hostel Items
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="services"
+        >
+            <i class="bi bi-tools"></i>
+
+            <span>
+                Services
+            </span>
+        </button>
+
+
+        <button
+            type="button"
+            class="category-option"
+            data-category="other"
+        >
+            <i class="bi bi-grid-3x3-gap"></i>
+
+            <span>
+                Other
+            </span>
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- ====================================
+     PRODUCTS
+==================================== -->
+
+<section class="products-section">
+
+    <div class="section-heading">
+
+        <div>
+            <p class="section-label">
+                Marketplace
+            </p>
+
+            <h2>
+                Latest Products
+            </h2>
+        </div>
+
+       
+
+    </div>
+
+
+    <div
+        id="products-container"
+        class="products-grid"
+    >
+
+        <p class="empty-products">
+            Products will appear here.
+        </p>
+
+    </div>
+
+</section>
 
 
     <!-- ========================================
@@ -266,11 +411,7 @@
         </a>
 
 
-        <a
-            href="/sell.html"
-            class="nav-item"
-            id="sell-link"
-        >
+        <a href="/sell.html" class="sell-nav-item">
             <i class="bi bi-plus-circle-fill"></i>
             <span>Sell</span>
         </a>
