@@ -1,3 +1,7 @@
+/* ========================================
+   GLOBAL
+======================================== */
+
 * {
     box-sizing: border-box;
 }
@@ -6,61 +10,181 @@ body {
     margin: 0;
     font-family: Arial, sans-serif;
     background: #f4f6f8;
+    color: #111;
 }
+
+
+/* ========================================
+   AUTHENTICATION CONTAINER
+======================================== */
 
 .auth-container {
     width: min(450px, 92%);
     margin: 60px auto;
-    padding: 30px;
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    padding: 32px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
 }
 
-h1 {
+
+/* ========================================
+   AUTH HEADINGS
+======================================== */
+
+.auth-container h1 {
     text-align: center;
-    margin-bottom: 10px;
+    margin: 0 0 8px;
+    font-size: 32px;
+    line-height: 1.2;
 }
 
-h2 {
+.auth-container h2 {
     text-align: center;
-    margin-bottom: 25px;
+    margin: 0 0 28px;
+    font-size: 24px;
+    font-weight: 600;
 }
 
-form {
+
+/* ========================================
+   AUTH FORM
+======================================== */
+
+.auth-container form {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 }
 
-input,
-select,
-button {
+
+/* ========================================
+   INPUTS
+======================================== */
+
+.auth-container input,
+.auth-container select {
     width: 100%;
-    padding: 12px;
+    padding: 13px 14px;
     font-size: 16px;
-    border-radius: 7px;
+    border: 1px solid #d0d5da;
+    border-radius: 8px;
+    outline: none;
+    background: #ffffff;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-input,
-select {
-    border: 1px solid #ccc;
+.auth-container input:focus,
+.auth-container select:focus {
+    border-color: #111;
+    box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
 
-button {
+
+/* ========================================
+   BUTTONS
+======================================== */
+
+.auth-container button {
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 16px;
     border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
     cursor: pointer;
     background: #111;
-    color: white;
+    color: #ffffff;
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease,
+        opacity 0.2s ease;
 }
 
-button:hover {
-    opacity: 0.9;
+.auth-container button:hover {
+    opacity: 0.92;
 }
+
+.auth-container button:active {
+    transform: scale(0.99);
+}
+
+
+/* ========================================
+   FORGOT PASSWORD BUTTON
+======================================== */
+
+#forgot-password {
+    margin-top: 12px;
+}
+
+
+/* ========================================
+   MESSAGE
+======================================== */
 
 #message {
-    margin-top: 20px;
+    min-height: 24px;
+    margin: 18px 0 0;
     text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   AUTH LINK
+======================================== */
+
+.auth-link {
+    margin: 22px 0 0;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.auth-link a {
+    color: #111;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+.auth-link a:hover {
+    opacity: 0.7;
+}
+
+
+/* ========================================
+   MOBILE AUTHENTICATION
+======================================== */
+
+@media (max-width: 600px) {
+
+    .auth-container {
+        width: calc(100% - 24px);
+        margin: 24px auto;
+        padding: 24px 18px;
+        border-radius: 14px;
+    }
+
+    .auth-container h1 {
+        font-size: 28px;
+    }
+
+    .auth-container h2 {
+        font-size: 22px;
+        margin-bottom: 24px;
+    }
+
+    .auth-container input,
+    .auth-container select,
+    .auth-container button {
+        font-size: 16px;
+    }
+
 }
 /* ========================================
    PRODUCT GRID
