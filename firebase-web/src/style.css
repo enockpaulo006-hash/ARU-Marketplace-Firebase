@@ -778,3 +778,400 @@ body {
     }
 
 }
+/* ========================================
+   SELL PAGE
+======================================== */
+
+.sell-container {
+    width: min(800px, 94%);
+    margin: 0 auto;
+
+    padding: 30px 0 110px;
+}
+
+
+/* ========================================
+   SELL INTRO
+======================================== */
+
+.sell-intro {
+    margin-bottom: 25px;
+}
+
+.sell-intro h2 {
+    margin: 0 0 8px;
+
+    font-size: 30px;
+}
+
+.sell-intro p:last-child {
+    margin: 0;
+
+    color: #666;
+
+    line-height: 1.6;
+}
+
+
+/* ========================================
+   SELLER NOTICE
+======================================== */
+
+.seller-notice {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 14px;
+
+    margin-bottom: 22px;
+
+    padding: 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #e0e4e8;
+
+    border-radius: 12px;
+}
+
+.seller-notice-icon {
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #f1f1f1;
+}
+
+.seller-notice-icon i {
+    font-size: 21px;
+}
+
+.seller-notice h3 {
+    margin: 0 0 5px;
+
+    font-size: 16px;
+}
+
+.seller-notice p {
+    margin: 0;
+
+    color: #666;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   FORM CARD
+======================================== */
+
+.sell-form-card {
+    padding: 25px;
+
+    background: #ffffff;
+
+    border: 1px solid #e0e4e8;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 5px 20px rgba(0, 0, 0, 0.05);
+}
+
+
+/* ========================================
+   FORM GROUP
+======================================== */
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+
+/* ========================================
+   FORM INPUTS
+======================================== */
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+
+    padding: 13px 14px;
+
+    border: 1px solid #d0d5da;
+
+    border-radius: 8px;
+
+    background: #ffffff;
+
+    font-family: inherit;
+
+    font-size: 16px;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-group textarea {
+    resize: vertical;
+
+    min-height: 130px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #111;
+
+    box-shadow:
+        0 0 0 3px rgba(17, 17, 17, 0.07);
+}
+
+
+/* ========================================
+   TWO-COLUMN FORM
+======================================== */
+
+.form-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 16px;
+}
+
+
+/* ========================================
+   IMAGE UPLOAD
+======================================== */
+
+.image-upload {
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 170px;
+
+    padding: 25px;
+
+    border: 2px dashed #d0d5da;
+
+    border-radius: 10px;
+
+    background: #fafbfc;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.image-upload:hover {
+    border-color: #111;
+
+    background: #f5f5f5;
+}
+
+.image-upload > i {
+    margin-bottom: 10px;
+
+    font-size: 32px;
+
+    color: #555;
+}
+
+.image-upload p {
+    margin: 0 0 5px;
+
+    font-size: 15px;
+
+    font-weight: 600;
+}
+
+.image-upload span {
+    color: #777;
+
+    font-size: 13px;
+}
+
+.image-upload input {
+    margin-top: 15px;
+
+    width: auto;
+
+    font-size: 14px;
+}
+
+
+/* ========================================
+   FORM INFORMATION
+======================================== */
+
+.form-information {
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin: 20px 0;
+
+    padding: 14px;
+
+    border-radius: 8px;
+
+    background: #f5f6f7;
+}
+
+.form-information i {
+    margin-top: 2px;
+
+    font-size: 18px;
+}
+
+.form-information p {
+    margin: 0;
+
+    color: #666;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   SUBMIT BUTTON
+======================================== */
+
+.submit-product-button {
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #111;
+
+    color: #ffffff;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.1s ease;
+}
+
+.submit-product-button:hover {
+    opacity: 0.9;
+}
+
+.submit-product-button:active {
+    transform: scale(0.99);
+}
+
+
+/* ========================================
+   SELL MESSAGE
+======================================== */
+
+#sell-message {
+    min-height: 22px;
+
+    margin: 15px 0 0;
+
+    text-align: center;
+
+    color: #555;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   SELL PAGE MOBILE
+======================================== */
+
+@media (max-width: 600px) {
+
+    .sell-container {
+        width: calc(100% - 24px);
+
+        padding-top: 22px;
+    }
+
+    .sell-intro h2 {
+        font-size: 25px;
+    }
+
+    .sell-form-card {
+        padding: 18px;
+
+        border-radius: 12px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+
+        gap: 0;
+    }
+
+    .seller-notice {
+        padding: 15px;
+    }
+
+    .image-upload {
+        min-height: 150px;
+
+        padding: 20px 12px;
+    }
+
+}
