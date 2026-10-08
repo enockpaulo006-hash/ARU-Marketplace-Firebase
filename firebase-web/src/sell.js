@@ -1,12 +1,25 @@
 import "./style.css";
+
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./firebase";
+
+import { auth, db } from "./firebase";
+
+import {
+    collection,
+    addDoc,
+    serverTimestamp
+} from "firebase/firestore";
 
 const MAX_IMAGES = 10;
 const MAX_SOURCE_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_OUTPUT_FILE_SIZE = 500 * 1024; // ~500 KB
 const MAX_IMAGE_DIMENSION = 1600;
 const JPEG_QUALITY = 0.82;
+
+const CLOUDINARY_CLOUD_NAME = "didth7hcw";
+const CLOUDINARY_UPLOAD_PRESET = "aru_marketplace_products";
+const CLOUDINARY_UPLOAD_URL =
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 const productsList = document.getElementById("products-list");
 const addProductButton = document.getElementById("add-product-button");
@@ -365,6 +378,47 @@ async function optimizeImage(file) {
     );
 }
 
+// --------------------------------------------------
+// UPLOAD IMAGE TO CLOUDINARY
+// --------------------------------------------------
+
+async function uploadToCloudinary(file) {
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append(
+        "upload_preset",
+        CLOUDINARY_UPLOAD_PRESET
+    );
+
+    const response = await fetch(
+        CLOUDINARY_UPLOAD_URL,
+        {
+            method: "POST",
+            body: formData
+        }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        console.error("Cloudinary upload error:", result);
+
+        throw new Error(
+            result.error?.message ||
+            "Cloudinary upload failed."
+        );
+    }
+
+    return {
+        url: result.secure_url,
+        publicId: result.public_id,
+        width: result.width,
+        height: result.height,
+        bytes: result.bytes,
+        format: result.format
+    };
+}
 
 // --------------------------------------------------
 // LOAD IMAGE
@@ -581,7 +635,7 @@ addProductButton.addEventListener("click", () => {
 // SUBMIT ALL PRODUCTS
 // --------------------------------------------------
 
-submitAllButton.addEventListener("click", () => {
+submitAllButton.addEventListener("click", async () => {
     const cards =
         productsList.querySelectorAll(".product-form-card");
 
@@ -590,7 +644,6 @@ submitAllButton.addEventListener("click", () => {
             "Please add at least one product.",
             "error"
         );
-
         return;
     }
 
@@ -636,14 +689,178 @@ submitAllButton.addEventListener("click", () => {
             "Please complete all required fields and add at least one photo to each product.",
             "error"
         );
-
         return;
     }
 
-    showSellMessage(
-        "All products are ready. Uploading to Firebase will be connected next.",
-        "success"
-    );
+    submitAllButton.disabled = true;
+
+    submitAllButton.innerHTML = `
+        <i class="bi bi-cloud-upload"></i>
+        Preparing...
+    `;
+
+    try {
+        let totalImages = 0;
+        let uploadedCount = 0;
+        let savedProducts = 0;
+
+        cards.forEach((card) => {
+            totalImages +=
+                (card.selectedFiles || []).length;
+        });
+
+        // ------------------------------------------
+        // PROCESS EACH PRODUCT
+        // ------------------------------------------
+
+        for (const card of cards) {
+
+            const title =
+                card.querySelector(".product-title").value.trim();
+
+            const category =
+                card.querySelector(".product-category").value;
+
+            const price =
+                Number(
+                    card.querySelector(".product-price").value
+                );
+
+            const condition =
+                card.querySelector(".product-condition").value;
+
+            const location =
+                card.querySelector(".product-location").value.trim();
+
+            const description =
+                card.querySelector(".product-description").value.trim();
+
+            const images =
+                card.selectedFiles || [];
+
+            // --------------------------------------
+            // UPLOAD PRODUCT IMAGES
+            // --------------------------------------
+
+            const imageUrls = [];
+            const imageDetails = [];
+
+            for (const image of images) {
+
+                submitAllButton.innerHTML = `
+                    <i class="bi bi-cloud-upload"></i>
+                    Uploading ${uploadedCount + 1}/${totalImages}...
+                `;
+
+                const result =
+                    await uploadToCloudinary(image);
+
+                console.log(
+                    "Cloudinary upload successful:",
+                    result
+                );
+
+                imageUrls.push(result.url);
+
+                imageDetails.push({
+                    url: result.url,
+                    publicId: result.publicId,
+                    width: result.width,
+                    height: result.height,
+                    bytes: result.bytes,
+                    format: result.format
+                });
+
+                uploadedCount++;
+            }
+
+            // --------------------------------------
+            // SAVE PRODUCT TO FIRESTORE
+            // --------------------------------------
+
+            submitAllButton.innerHTML = `
+                <i class="bi bi-cloud-upload"></i>
+                Saving product...
+            `;
+
+            const productData = {
+                sellerId: currentUser.uid,
+
+                title: title,
+
+                category: category,
+
+                price: price,
+
+                description: description,
+
+                imageUrls: imageUrls,
+
+                imageDetails: imageDetails,
+
+                productCondition: condition,
+
+                location: location,
+
+                status: "active",
+
+                createdAt: serverTimestamp(),
+
+                updatedAt: serverTimestamp()
+            };
+
+            const productRef =
+                await addDoc(
+                    collection(db, "products"),
+                    productData
+                );
+
+            console.log(
+                "Product saved successfully:",
+                productRef.id
+            );
+
+            savedProducts++;
+        }
+
+        // ------------------------------------------
+        // SUCCESS
+        // ------------------------------------------
+
+        showSellMessage(
+            `Successfully listed ${savedProducts} product${savedProducts === 1 ? "" : "s"} with ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"}.`,
+            "success"
+        );
+
+        // Clear submitted products
+        productsList.innerHTML = "";
+
+        productCount = 0;
+
+        createProductForm();
+
+    } catch (error) {
+
+        console.error(
+            "Product submission failed:",
+            error
+        );
+
+        showSellMessage(
+            error.message ||
+            "Something went wrong while submitting your products.",
+            "error"
+        );
+
+    } finally {
+
+        submitAllButton.disabled = false;
+
+        submitAllButton.innerHTML = `
+            <i class="bi bi-cloud-upload"></i>
+            Submit All Products
+        `;
+    }
 });
 
 
