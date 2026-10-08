@@ -18,6 +18,10 @@ import {
 import { auth, db } from "./firebase.js";
 
 
+// ========================================
+// ELEMENTS
+// ========================================
+
 const welcomeMessage =
     document.getElementById("welcome-message");
 
@@ -89,7 +93,6 @@ onAuthStateChanged(auth, async (user) => {
     // ====================================
 
     loadProducts();
-
 });
 
 
@@ -98,6 +101,17 @@ onAuthStateChanged(auth, async (user) => {
 // ========================================
 
 async function loadProducts() {
+
+    // Make sure the HTML element exists
+    if (!productsContainer) {
+
+        console.error(
+            "products-container was not found in home.html."
+        );
+
+        return;
+    }
+
 
     try {
 
@@ -122,7 +136,10 @@ async function loadProducts() {
             productsContainer.innerHTML = `
                 <div class="empty-products">
                     <p>No products available yet.</p>
-                    <p>Be the first to sell something on ARU Marketplace.</p>
+                    <p>
+                        Be the first to sell something
+                        on ARU Marketplace.
+                    </p>
                 </div>
             `;
 
@@ -130,7 +147,9 @@ async function loadProducts() {
         }
 
 
-        // Convert Firestore documents to normal objects
+        // Convert Firestore documents
+        // to normal JavaScript objects
+
         const products =
             snapshot.docs.map((productDoc) => ({
                 id: productDoc.id,
@@ -138,7 +157,10 @@ async function loadProducts() {
             }));
 
 
-        // Sort newest products first
+        // ====================================
+        // SORT NEWEST PRODUCTS FIRST
+        // ====================================
+
         products.sort((a, b) => {
 
             const dateA =
@@ -158,6 +180,10 @@ async function loadProducts() {
         productsContainer.innerHTML = "";
 
 
+        // ====================================
+        // CREATE PRODUCT CARDS
+        // ====================================
+
         products.forEach((product) => {
 
             const productCard =
@@ -167,27 +193,34 @@ async function loadProducts() {
                 "product-card";
 
 
+            // First Cloudinary image
+
             const imageUrl =
-                product.imageUrl ||
+                product.imageUrls?.[0] ||
                 "https://via.placeholder.com/300x220?text=No+Image";
 
 
             const title =
-                product.title || "Untitled Product";
+                product.title ||
+                "Untitled Product";
 
 
             const price =
                 product.price != null
-                    ? `TZS ${Number(product.price).toLocaleString()}`
+                    ? `TZS ${Number(
+                        product.price
+                    ).toLocaleString()}`
                     : "Price not available";
 
 
             const location =
-                product.location || "Location not specified";
+                product.location ||
+                "Location not specified";
 
 
             const category =
-                product.category || "Other";
+                product.category ||
+                "Other";
 
 
             productCard.innerHTML = `
@@ -200,7 +233,9 @@ async function loadProducts() {
 
                 <div class="product-card-content">
 
-                    <h3>${title}</h3>
+                    <h3>
+                        ${title}
+                    </h3>
 
                     <p class="product-price">
                         ${price}
@@ -211,10 +246,12 @@ async function loadProducts() {
                     </p>
 
                     <p class="product-location">
-                        📍 ${location}
+                        <i class="bi bi-geo-alt-fill"></i>
+                        ${location}
                     </p>
 
                     <button
+                        type="button"
                         class="view-product-button"
                         data-product-id="${product.id}"
                     >
@@ -225,43 +262,10 @@ async function loadProducts() {
             `;
 
 
-            productsContainer.appendChild(productCard);
-
-        });
-
-
-        // ====================================
-        // PRODUCT BUTTONS
-        // ====================================
-
-        const productButtons =
-            document.querySelectorAll(
-                ".view-product-button"
+            productsContainer.appendChild(
+                productCard
             );
-
-
-        productButtons.forEach((button) => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const productId =
-                        button.dataset.productId;
-
-                    console.log(
-                        "Selected product:",
-                        productId
-                    );
-
-                    // Product details page
-                    // will be added next.
-
-                }
-            );
-
         });
-
 
     } catch (error) {
 
@@ -271,15 +275,68 @@ async function loadProducts() {
         );
 
 
-        productsContainer.innerHTML = `
-            <div class="empty-products">
-                <p>Unable to load products.</p>
-                <p>Please try again later.</p>
-            </div>
-        `;
+        if (productsContainer) {
 
+            productsContainer.innerHTML = `
+                <div class="empty-products">
+                    <p>Unable to load products.</p>
+                    <p>
+                        Please try again later.
+                    </p>
+                </div>
+            `;
+        }
     }
+}
 
+
+// ========================================
+// VIEW PRODUCT
+// ========================================
+
+if (productsContainer) {
+
+    productsContainer.addEventListener(
+        "click",
+        (event) => {
+
+            const button =
+                event.target.closest(
+                    ".view-product-button"
+                );
+
+
+            if (!button) {
+                return;
+            }
+
+
+            const productId =
+                button.dataset.productId;
+
+
+            if (!productId) {
+
+                console.error(
+                    "Product ID not found."
+                );
+
+                return;
+            }
+
+
+            console.log(
+                "Opening product:",
+                productId
+            );
+
+
+            window.location.href =
+                `/product.html?id=${encodeURIComponent(
+                    productId
+                )}`;
+        }
+    );
 }
 
 
@@ -287,25 +344,177 @@ async function loadProducts() {
 // LOGOUT
 // ========================================
 
-logoutButton.addEventListener(
-    "click",
-    async () => {
+if (logoutButton) {
 
-        try {
+    logoutButton.addEventListener(
+        "click",
+        async () => {
 
-            await signOut(auth);
+            try {
 
-            window.location.href =
-                "/login.html";
+                await signOut(auth);
 
-        } catch (error) {
+                window.location.href =
+                    "/login.html";
 
-            console.error(
-                "Logout failed:",
-                error
+            } catch (error) {
+
+                console.error(
+                    "Logout failed:",
+                    error
+                );
+            }
+        }
+    );
+}
+// ========================================
+// CATEGORY SELECTOR
+// ========================================
+
+const categoriesToggle =
+    document.getElementById("categories-toggle");
+
+const categoryMenu =
+    document.getElementById("category-menu");
+
+const categoryIcons =
+    document.querySelectorAll(".category-icon");
+
+const categoryOptions =
+    document.querySelectorAll(".category-option");
+
+
+if (categoriesToggle && categoryMenu) {
+
+    categoriesToggle.addEventListener(
+        "click",
+        () => {
+
+            const isOpen =
+                !categoryMenu.hasAttribute("hidden");
+
+
+            if (isOpen) {
+
+                categoryMenu.setAttribute(
+                    "hidden",
+                    ""
+                );
+
+                categoriesToggle.classList.remove(
+                    "open"
+                );
+
+                categoriesToggle
+                    .querySelector("span")
+                    .textContent = "View";
+
+            } else {
+
+                categoryMenu.removeAttribute(
+                    "hidden"
+                );
+
+                categoriesToggle.classList.add(
+                    "open"
+                );
+
+                categoriesToggle
+                    .querySelector("span")
+                    .textContent = "Hide";
+            }
+        }
+    );
+}
+
+
+// ========================================
+// CATEGORY SELECTION
+// ========================================
+
+function selectCategory(category) {
+
+    // Small icon selection
+
+    categoryIcons.forEach((button) => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.category === category
+        );
+
+    });
+
+
+    // Expanded menu selection
+
+    categoryOptions.forEach((button) => {
+
+        button.classList.toggle(
+            "active",
+            button.dataset.category === category
+        );
+
+    });
+
+
+    console.log(
+        "Selected category:",
+        category
+    );
+}
+
+
+categoryIcons.forEach((button) => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            selectCategory(
+                button.dataset.category
             );
 
         }
+    );
 
-    }
-);
+});
+
+
+categoryOptions.forEach((button) => {
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            selectCategory(
+                button.dataset.category
+            );
+
+
+            // Close menu after selection
+
+            if (categoryMenu) {
+
+                categoryMenu.setAttribute(
+                    "hidden",
+                    ""
+                );
+            }
+
+
+            if (categoriesToggle) {
+
+                categoriesToggle.classList.remove(
+                    "open"
+                );
+
+                categoriesToggle
+                    .querySelector("span")
+                    .textContent = "View";
+            }
+
+        }
+    );
+
+});
