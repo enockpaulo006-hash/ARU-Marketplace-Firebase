@@ -1175,3 +1175,396 @@ body {
     }
 
 }
+/* ========================================
+   SELL PAGE - MULTIPLE PRODUCTS
+======================================== */
+
+.back-button {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+
+    color: #ffffff;
+    text-decoration: none;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.back-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.back-button i {
+    font-size: 19px;
+}
+
+.header-spacer {
+    width: 40px;
+}
+
+
+/* ========================================
+   PRODUCT FORM CARD
+======================================== */
+
+.product-form-card {
+    margin-bottom: 20px;
+}
+
+
+/* ========================================
+   PRODUCT FORM HEADER
+======================================== */
+
+.product-form-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-bottom: 25px;
+
+    padding-bottom: 15px;
+
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.product-form-header h3 {
+    margin: 0;
+
+    font-size: 21px;
+}
+
+
+/* ========================================
+   REMOVE PRODUCT
+======================================== */
+
+.remove-product-button {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #555;
+
+    cursor: pointer;
+}
+
+.remove-product-button:hover {
+    background: #f4f4f4;
+    color: #111;
+}
+
+.remove-product-button i {
+    font-size: 17px;
+}
+
+
+/* ========================================
+   CHOOSE IMAGES BUTTON
+======================================== */
+
+.choose-images-button {
+    display: inline-flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 15px;
+
+    padding: 10px 16px;
+
+    border-radius: 8px;
+
+    background: #111;
+    color: #ffffff;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    cursor: pointer;
+}
+
+.choose-images-button:hover {
+    opacity: 0.9;
+}
+
+.choose-images-button input {
+    display: none;
+}
+
+
+/* ========================================
+   IMAGE PREVIEW GRID
+======================================== */
+
+.image-preview-grid {
+    display: grid;
+
+    grid-template-columns: repeat(
+        auto-fill,
+        minmax(120px, 1fr)
+    );
+
+    gap: 12px;
+
+    margin-top: 15px;
+}
+
+
+/* ========================================
+   IMAGE PREVIEW
+======================================== */
+
+.image-preview {
+    position: relative;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    border-radius: 10px;
+
+    background: #f2f3f4;
+
+    border: 1px solid #e0e4e8;
+}
+
+.image-preview img {
+    display: block;
+
+    width: 100%;
+    height: 120px;
+
+    object-fit: cover;
+}
+
+
+/* ========================================
+   IMAGE REMOVE BUTTON
+======================================== */
+
+.remove-image-button {
+    position: absolute;
+
+    top: 7px;
+    right: 7px;
+
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 50%;
+
+    background: rgba(0, 0, 0, 0.72);
+    color: #ffffff;
+
+    cursor: pointer;
+}
+
+.remove-image-button:hover {
+    background: #111;
+}
+
+.remove-image-button i {
+    font-size: 15px;
+}
+
+
+/* ========================================
+   IMAGE NUMBER
+======================================== */
+
+.image-preview span {
+    display: block;
+
+    padding: 7px 5px;
+
+    text-align: center;
+
+    color: #666;
+
+    font-size: 12px;
+}
+
+
+/* ========================================
+   ADD PRODUCT BUTTON
+======================================== */
+
+.add-product-button {
+    width: 100%;
+
+    min-height: 50px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin: 5px 0 15px;
+
+    border: 1px dashed #aaa;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #222;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.add-product-button:hover {
+    border-color: #111;
+    background: #fafafa;
+}
+
+
+/* ========================================
+   SUBMIT ALL PRODUCTS
+======================================== */
+
+.submit-all-products {
+    width: 100%;
+
+    min-height: 52px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #111;
+    color: #ffffff;
+
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.1s ease;
+}
+
+.submit-all-products:hover {
+    opacity: 0.9;
+}
+
+.submit-all-products:active {
+    transform: scale(0.99);
+}
+
+
+/* ========================================
+   SELL MESSAGE
+======================================== */
+
+.sell-message {
+    min-height: 24px;
+
+    margin: 15px 0 0;
+
+    text-align: center;
+
+    color: #555;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+}
+
+
+/* ========================================
+   SELL PAGE MOBILE
+======================================== */
+
+@media (max-width: 600px) {
+
+    .sell-container {
+        width: calc(100% - 24px);
+
+        padding-top: 22px;
+    }
+
+    .sell-intro h2 {
+        font-size: 25px;
+    }
+
+    .sell-form-card {
+        padding: 18px;
+    }
+
+    .product-form-header h3 {
+        font-size: 19px;
+    }
+
+    .image-preview-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .image-preview img {
+        height: 135px;
+    }
+
+    .choose-images-button {
+        width: 100%;
+    }
+
+}
+
+
+/* ========================================
+   VERY SMALL PHONES
+======================================== */
+
+@media (max-width: 380px) {
+
+    .image-preview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .image-preview img {
+        height: 120px;
+    }
+
+}
