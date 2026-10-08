@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    <title>Sell Product - ARU Marketplace</title>
+    <title>Sell - ARU Marketplace</title>
 
     <!-- Bootstrap Icons -->
     <link
@@ -41,6 +41,7 @@
             <a
                 href="/home.html"
                 class="back-button"
+                aria-label="Back to home"
             >
                 <i class="bi bi-arrow-left"></i>
             </a>
@@ -61,15 +62,13 @@
 
 
     <!-- ========================================
-         MAIN CONTENT
+         MAIN
     ========================================= -->
 
     <main class="sell-container">
 
 
-        <!-- ====================================
-             PAGE INTRO
-        ==================================== -->
+        <!-- INTRO -->
 
         <section class="sell-intro">
 
@@ -78,20 +77,19 @@
             </p>
 
             <h2>
-                List your product
+                Create your listings
             </h2>
 
             <p>
-                Share your product with the ARU community
-                and reach other students easily.
+                Add one or more products. Each product
+                can have multiple photos and its own
+                description.
             </p>
 
         </section>
 
 
-        <!-- ====================================
-             SELLER NOTICE
-        ==================================== -->
+        <!-- SELLER NOTICE -->
 
         <section class="seller-notice">
 
@@ -108,8 +106,8 @@
                 </h3>
 
                 <p>
-                    Products are reviewed before they
-                    become visible to buyers.
+                    Every product will be reviewed before
+                    it becomes visible to buyers.
                 </p>
 
             </div>
@@ -117,246 +115,57 @@
         </section>
 
 
-        <!-- ====================================
-             PRODUCT FORM
-        ==================================== -->
+        <!-- ========================================
+             PRODUCTS CONTAINER
+        ========================================= -->
 
-        <section class="sell-form-card">
+        <section id="products-list">
 
-            <form id="sell-product-form">
 
+            <!-- PRODUCT 1 WILL BE INSERTED HERE -->
 
-                <!-- Product name -->
-
-                <div class="form-group">
-
-                    <label for="product-title">
-                        Product Name
-                    </label>
-
-                    <input
-                        type="text"
-                        id="product-title"
-                        name="title"
-                        placeholder="e.g. HP Laptop"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- Category -->
-
-                <div class="form-group">
-
-                    <label for="product-category">
-                        Category
-                    </label>
-
-                    <select
-                        id="product-category"
-                        name="category"
-                        required
-                    >
-
-                        <option value="">
-                            Select a category
-                        </option>
-
-                        <option value="electronics">
-                            Electronics
-                        </option>
-
-                        <option value="phones_accessories">
-                            Phones & Accessories
-                        </option>
-
-                        <option value="books_notes">
-                            Books & Notes
-                        </option>
-
-                        <option value="fashion">
-                            Fashion
-                        </option>
-
-                        <option value="hostel_items">
-                            Hostel Items
-                        </option>
-
-                        <option value="services">
-                            Services
-                        </option>
-
-                        <option value="other">
-                            Other
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                <!-- Price + condition -->
-
-                <div class="form-row">
-
-
-                    <div class="form-group">
-
-                        <label for="product-price">
-                            Price (TZS)
-                        </label>
-
-                        <input
-                            type="number"
-                            id="product-price"
-                            name="price"
-                            placeholder="e.g. 250000"
-                            min="0"
-                            required
-                        >
-
-                    </div>
-
-
-                    <div class="form-group">
-
-                        <label for="product-condition">
-                            Condition
-                        </label>
-
-                        <select
-                            id="product-condition"
-                            name="condition"
-                            required
-                        >
-
-                            <option value="">
-                                Select condition
-                            </option>
-
-                            <option value="new">
-                                New
-                            </option>
-
-                            <option value="used">
-                                Used
-                            </option>
-
-                            <option value="like_new">
-                                Like New
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                </div>
-
-
-                <!-- Location -->
-
-                <div class="form-group">
-
-                    <label for="product-location">
-                        Location
-                    </label>
-
-                    <input
-                        type="text"
-                        id="product-location"
-                        name="location"
-                        placeholder="e.g. Ardhi University"
-                        required
-                    >
-
-                </div>
-
-
-                <!-- Description -->
-
-                <div class="form-group">
-
-                    <label for="product-description">
-                        Description
-                    </label>
-
-                    <textarea
-                        id="product-description"
-                        name="description"
-                        rows="5"
-                        placeholder="Describe your product..."
-                        required
-                    ></textarea>
-
-                </div>
-
-
-                <!-- Product image -->
-
-                <div class="form-group">
-
-                    <label for="product-image">
-                        Product Image
-                    </label>
-
-                    <div class="image-upload">
-
-                        <i class="bi bi-cloud-arrow-up"></i>
-
-                        <p>
-                            Add a clear photo of your product
-                        </p>
-
-                        <span>
-                            JPG, PNG or WEBP
-                        </span>
-
-                        <input
-                            type="file"
-                            id="product-image"
-                            name="image"
-                            accept="image/jpeg,image/png,image/webp"
-                        >
-
-                    </div>
-
-                </div>
-
-
-                <!-- Notice -->
-
-                <div class="form-information">
-
-                    <i class="bi bi-info-circle"></i>
-
-                    <p>
-                        Your product will be reviewed before
-                        it is published on ARU Marketplace.
-                    </p>
-
-                </div>
-
-
-                <!-- Submit -->
-
-                <button
-                    type="submit"
-                    class="submit-product-button"
-                >
-
-                    <i class="bi bi-plus-circle"></i>
-
-                    Submit Product
-
-                </button>
-
-
-                <p id="sell-message"></p>
-
-            </form>
 
         </section>
+
+
+        <!-- ========================================
+             ADD PRODUCT
+        ========================================= -->
+
+        <button
+            type="button"
+            id="add-product-button"
+            class="add-product-button"
+        >
+
+            <i class="bi bi-plus-circle"></i>
+
+            Add Another Product
+
+        </button>
+
+
+        <!-- ========================================
+             SUBMIT ALL
+        ========================================= -->
+
+        <button
+            type="button"
+            id="submit-all-products"
+            class="submit-all-products"
+        >
+
+            <i class="bi bi-cloud-arrow-up"></i>
+
+            Submit All Products
+
+        </button>
+
+
+        <p
+            id="sell-message"
+            class="sell-message"
+        ></p>
 
 
     </main>
