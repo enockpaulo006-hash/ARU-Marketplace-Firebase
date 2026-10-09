@@ -84,19 +84,36 @@ function statusLabel(status) {
     return labels[status] || status;
 }
 
-function matchesFilter(order) {
-    const status = escapeStatus(order.status);
 
-    if (currentFilter === "all") {
-        return true;
+    function matchesFilter(order) {
+        const status = escapeStatus(order.status);
+
+        // Hide completed orders 24 hours after completion.
+        if (status === "completed") {
+            const completedTime =
+                order.completedAt?.toMillis?.();
+
+            // Keep older completed orders visible until they have
+            // a completion timestamp, so existing records aren't hidden.
+            if (
+                completedTime &&
+                Date.now() - completedTime >= 24 * 60 * 60 * 1000
+            ) {
+                return false;
+            }
+        }
+
+        if (currentFilter === "all") {
+            return true;
+        }
+
+        if (currentFilter === "other") {
+            return ["rejected", "cancelled"].includes(status);
+        }
+
+        return status === currentFilter;
     }
 
-    if (currentFilter === "other") {
-        return ["rejected", "cancelled"].includes(status);
-    }
-
-    return status === currentFilter;
-}
 
 function createActionButton(label, action, orderId, style = "primary") {
     const button = document.createElement("button");
@@ -380,10 +397,17 @@ async function handleOrderAction(orderId, action, button) {
             throw new Error("The order status changed. Reload and try again.");
         }
 
-        await updateDoc(orderRef, {
+
+        const updateData = {
             status: nextStatus,
             updatedAt: serverTimestamp()
-        });
+        };
+
+        if (nextStatus === "completed") {
+            updateData.completedAt = serverTimestamp();
+        }
+
+        await updateDoc(orderRef, updateData);
 
         await loadOrders();
     } catch (error) {
