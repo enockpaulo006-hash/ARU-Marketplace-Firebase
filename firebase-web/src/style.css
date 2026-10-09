@@ -2924,3 +2924,365 @@ button {
 #category-menu:not([hidden]) {
     display: grid;
 }
+
+
+/* My Products page */
+.my-products-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 5%;
+    background: #ffffff;
+    border-bottom: 1px solid #e1e6eb;
+}
+
+.my-products-header .back-link {
+    color: #065597;
+    font-size: 25px;
+    text-decoration: none;
+}
+
+.my-products-header h1 {
+    margin: 0;
+    color: #065597;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.my-products-header p {
+    margin: 4px 0 0;
+    color: #737b84;
+    font-size: 13px;
+}
+
+.my-products-main {
+    width: min(100% - 32px, 900px);
+    margin: 24px auto 100px;
+}
+
+.my-products-summary {
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e1e6eb;
+    border-radius: 14px;
+}
+
+.my-products-summary h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.my-products-summary p {
+    margin: 0 0 12px;
+    color: #737b84;
+    font-size: 14px;
+}
+
+.product-count {
+    color: #065597;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.my-products-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 18px 0;
+}
+
+.product-filter {
+    flex: 0 0 auto;
+    padding: 9px 14px;
+    color: #4d5863;
+    background: #ffffff;
+    border: 1px solid #dce2e8;
+    border-radius: 22px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.product-filter.active {
+    color: #ffffff;
+    background: #065597;
+    border-color: #065597;
+}
+
+.my-products-list {
+    display: grid;
+    gap: 14px;
+}
+
+.my-product-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 14px;
+    background: #ffffff;
+    border: 1px solid #e1e6eb;
+    border-radius: 14px;
+}
+
+.my-product-image {
+    flex: 0 0 112px;
+    width: 112px;
+    height: 112px;
+    object-fit: cover;
+    background: #f1f3f5;
+    border-radius: 10px;
+}
+
+.my-product-details {
+    min-width: 0;
+    flex: 1;
+}
+
+.my-product-details h3 {
+    margin: 0 0 7px;
+    color: #202832;
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.my-product-price {
+    margin: 0 0 9px;
+    color: #d55e1c;
+    font-weight: 700;
+}
+
+.my-product-status {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 5px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-pending {
+    color: #8a5700;
+    background: #fff1cc;
+}
+
+.status-active {
+    color: #176b38;
+    background: #dcf5e5;
+}
+
+.status-rejected {
+    color: #a32323;
+    background: #fde4e4;
+}
+
+.status-hidden {
+    color: #505963;
+    background: #e9edf1;
+}
+
+.status-sold {
+    color: #174d85;
+    background: #dcecff;
+}
+
+.my-product-date {
+    margin: 0;
+    color: #737b84;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+.my-product-rejection {
+    margin: 10px 0 0;
+    padding: 9px;
+    color: #922727;
+    background: #fff0f0;
+    border-radius: 8px;
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.my-products-message {
+    padding: 28px 16px;
+    color: #737b84;
+    text-align: center;
+    background: #ffffff;
+    border: 1px solid #e1e6eb;
+    border-radius: 12px;
+}
+
+.my-products-add-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 14px;
+    color: #ffffff;
+    background: #d55e1c;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.my-products-add-button:hover {
+    color: #ffffff;
+    background: #b94c13;
+}
+
+@media (max-width: 480px) {
+    .my-products-header {
+        padding: 16px;
+    }
+
+    .my-products-main {
+        width: calc(100% - 24px);
+        margin-top: 16px;
+    }
+
+    .my-product-card {
+        gap: 12px;
+        padding: 10px;
+    }
+
+    .my-product-image {
+        flex-basis: 88px;
+        width: 88px;
+        height: 96px;
+    }
+
+    .my-product-details h3 {
+        font-size: 14px;
+    }
+}
+
+
+.edit-product-form {
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e1e6eb;
+    border-radius: 14px;
+}
+
+.edit-product-form fieldset {
+    min-width: 0;
+    border: 0;
+    padding: 0;
+}
+
+.edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 18px;
+}
+
+.edit-field label {
+    color: #27313b;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.edit-field input,
+.edit-field select,
+.edit-field textarea {
+    width: 100%;
+    padding: 12px;
+    color: #202832;
+    background: #ffffff;
+    border: 1px solid #dce2e8;
+    border-radius: 9px;
+    font: inherit;
+}
+
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-field textarea:focus {
+    outline: 2px solid #065597;
+    outline-offset: 1px;
+}
+
+.edit-current-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.edit-current-images img {
+    width: 90px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 9px;
+    border: 1px solid #e1e6eb;
+}
+
+.edit-help {
+    margin: 8px 0 0;
+    color: #737b84;
+    font-size: 12px;
+}
+
+.edit-cancel-link {
+    display: block;
+    margin-top: 14px;
+    color: #065597;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.my-product-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.my-product-edit-button {
+    padding: 8px 16px;
+    color: #065597;
+    background: #ffffff;
+    border: 1px solid #065597;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.edit-message {
+    margin-bottom: 18px;
+    font-size: 14px;
+}
+
+.edit-message-info {
+    color: #065597;
+}
+
+.edit-message-success {
+    color: #176b38;
+}
+
+.edit-message-error {
+    color: #a32323;
+}
+
+.my-product-delete-button {
+    padding: 8px 14px;
+    color: #b42318;
+    background: #ffffff;
+    border: 1px solid #d92d20;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.my-product-delete-button:hover:not(:disabled) {
+    color: #ffffff;
+    background: #b42318;
+}
+
+.my-product-delete-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
