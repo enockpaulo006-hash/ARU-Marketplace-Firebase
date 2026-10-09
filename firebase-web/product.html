@@ -169,18 +169,69 @@
                 </div>
 
 
+
                 <div class="product-actions">
+
+                    <div class="order-quantity-section">
+                        <label for="order-quantity">Quantity</label>
+
+                        <div class="quantity-control">
+                            <button
+                                type="button"
+                                id="decrease-quantity"
+                                aria-label="Decrease quantity">
+                                −
+                            </button>
+
+                            <input
+                                type="number"
+                                id="order-quantity"
+                                value="1"
+                                min="1"
+                                max="99"
+                                step="1"
+                                inputmode="numeric"
+                            >
+
+                            <button
+                                type="button"
+                                id="increase-quantity"
+                                aria-label="Increase quantity">
+                                +
+                            </button>
+                        </div>
+
+                        <p class="order-total">
+                            Total:
+                            <strong id="order-total-price">TZS 0</strong>
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        id="place-order-button"
+                        class="place-order-button">
+                        <i class="bi bi-bag-check"></i>
+                        Place Order
+                    </button>
 
                     <button
                         type="button"
                         id="contact-seller-button"
-                        class="contact-seller-button"
-                    >
+                        class="contact-seller-button">
                         <i class="bi bi-chat-dots"></i>
                         Contact Seller
                     </button>
 
+                    <p
+                        id="order-message"
+                        class="order-message"
+                        role="status"
+                        aria-live="polite">
+                    </p>
+
                 </div>
+
 
             </div>
 
