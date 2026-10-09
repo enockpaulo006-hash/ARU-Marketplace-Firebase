@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Product | ARU Marketplace</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+</head>
+<body>
+    <header class="my-products-header">
+        <a href="/my-products.html" class="back-link" aria-label="Back">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+        <div>
+            <h1>Edit Product</h1>
+            <p>Update your marketplace listing</p>
+        </div>
+    </header>
+
+    <main class="my-products-main">
+        <form id="edit-product-form" class="edit-product-form">
+            <p id="edit-message" role="status">
+                Loading product details...
+            </p>
+
+            <fieldset id="edit-fields" disabled>
+                <div class="edit-field">
+                    <label for="edit-title">Product title</label>
+                    <input id="edit-title" type="text" maxlength="100"
+                           required>
+                </div>
+
+                <div class="edit-field">
+                    <label for="edit-category">Category</label>
+                    <select id="edit-category" required>
+                        <option value="">Choose category</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="phones_accessories">Phones & Accessories</option>
+                        <option value="books_notes">Books & Notes</option>
+                        <option value="fashion">Fashion</option>
+                        <option value="hostel_items">Hostel Items</option>
+                        <option value="services">Services</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="edit-field">
+                    <label for="edit-price">Price (TZS)</label>
+                    <input id="edit-price" type="number" min="1"
+                           step="1" required>
+                </div>
+
+                <div class="edit-field">
+                    <label for="edit-condition">Condition</label>
+                    <select id="edit-condition" required>
+                        <option value="">Choose condition</option>
+                        <option value="new">New</option>
+                        <option value="used">Used</option>
+                    </select>
+                </div>
+
+                <div class="edit-field">
+                    <label for="edit-location">Location</label>
+                    <input id="edit-location" type="text" maxlength="100"
+                           required>
+                </div>
+
+                <div class="edit-field">
+                    <label for="edit-description">Description</label>
+                    <textarea id="edit-description" rows="4"
+                              maxlength="2000" required></textarea>
+                </div>
+
+                <div class="edit-field">
+                    <label>Current photos</label>
+                    <div id="current-images" class="edit-current-images"></div>
+                    <p class="edit-help">
+                        Existing photos will be kept in this first version.
+                        You can update the text details above.
+                    </p>
+                </div>
+
+                <button id="save-product-button" type="submit"
+                        class="my-products-add-button">
+                    <i class="bi bi-check-circle"></i>
+                    Save Changes
+                </button>
+            </fieldset>
+
+            <a href="/my-products.html" class="edit-cancel-link">
+                Cancel
+            </a>
+        </form>
+    </main>
+
+    <script type="module" src="/src/edit-product.js"></script>
+</body>
+</html>
