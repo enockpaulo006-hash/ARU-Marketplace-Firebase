@@ -3286,3 +3286,33 @@ button {
     opacity: 0.45;
     cursor: not-allowed;
 }
+
+.moderator-search {
+    display: grid;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.moderator-search label {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.moderator-search input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dce2e8;
+    border-radius: 10px;
+    background: #ffffff;
+}
+
+.moderator-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 16px 0;
+}
+
+.moderator-filters .product-filter {
+    flex: 0 0 auto;
+}
