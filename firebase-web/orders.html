@@ -1,0 +1,150 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My Orders | ARU Marketplace</title>
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+
+    <!-- ARU Marketplace custom styles -->
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+
+<body>
+    <header class="my-products-header">
+        <a href="/home.html" class="back-link" aria-label="Back to Home">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+
+        <div>
+            <h1>My Orders</h1>
+            <p>ARU Marketplace</p>
+        </div>
+    </header>
+
+    <main class="my-products-main">
+
+        <section class="my-products-summary">
+            <h2>Orders</h2>
+            <p>Track purchases and manage orders for your products.</p>
+
+            <div id="orders-count" class="product-count">
+                Loading orders...
+            </div>
+        </section>
+
+        <nav class="moderator-filters orders-filters"
+             aria-label="Filter orders">
+
+            <button type="button"
+                    class="product-filter active"
+                    data-filter="all"
+                    aria-pressed="true">
+                All
+            </button>
+
+            <button type="button"
+                    class="product-filter"
+                    data-filter="pending"
+                    aria-pressed="false">
+                Pending
+            </button>
+
+            <button type="button"
+                    class="product-filter"
+                    data-filter="accepted"
+                    aria-pressed="false">
+                Accepted
+            </button>
+
+            <button type="button"
+                    class="product-filter"
+                    data-filter="completed"
+                    aria-pressed="false">
+                Completed
+            </button>
+
+            <button type="button"
+                    class="product-filter"
+                    data-filter="other"
+                    aria-pressed="false">
+                Other
+            </button>
+        </nav>
+
+        <section class="orders-tabs" aria-label="Order type">
+
+            <button type="button"
+                    id="buyer-orders-tab"
+                    class="orders-tab active"
+                    aria-pressed="true">
+                <i class="bi bi-bag"></i>
+                Orders I Placed
+            </button>
+
+            <button type="button"
+                    id="seller-orders-tab"
+                    class="orders-tab"
+                    aria-pressed="false">
+                <i class="bi bi-box-seam"></i>
+                Orders for My Products
+            </button>
+
+        </section>
+
+        <section id="orders-list"
+                 class="my-products-list"
+                 aria-live="polite">
+
+            <div class="my-products-message">
+                <p>Loading your orders...</p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Bottom navigation -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+
+        <a href="/home.html" class="bottom-nav-item">
+            <i class="bi bi-house"></i>
+            <span>Home</span>
+        </a>
+
+        <a href="/orders.html"
+           class="bottom-nav-item active"
+           aria-current="page">
+            <i class="bi bi-receipt"></i>
+            <span>Orders</span>
+        </a>
+
+        <a href="/sell.html" class="bottom-nav-item">
+            <i class="bi bi-plus-circle"></i>
+            <span>Sell</span>
+        </a>
+
+        <a href="/profile.html" class="bottom-nav-item">
+            <i class="bi bi-person"></i>
+            <span>Profile</span>
+        </a>
+
+    </nav>
+
+    <!-- Orders functionality -->
+    <script type="module" src="/src/orders.js"></script>
+</body>
+</html>
