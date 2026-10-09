@@ -4,9 +4,13 @@ import { onAuthStateChanged } from "firebase/auth";
 
 import { auth, db } from "./firebase";
 
+
 import {
     doc,
-    getDoc
+    getDoc,
+    addDoc,
+    collection,
+    serverTimestamp
 } from "firebase/firestore";
 
 
@@ -47,6 +51,17 @@ const productLocation =
 const productDescription =
     document.getElementById("product-description");
 
+const quantityInput = document.getElementById("order-quantity");
+const decreaseQuantityButton = document.getElementById("decrease-quantity");
+const increaseQuantityButton = document.getElementById("increase-quantity");
+const totalPriceElement = document.getElementById("order-total-price");
+const placeOrderButton = document.getElementById("place-order-button");
+const orderMessage = document.getElementById("order-message");
+
+let currentProduct = null;
+let currentUser = null;
+let isModerator = false;
+let orderInProgress = false;
 
 // --------------------------------------------------
 // GET PRODUCT ID FROM URL
@@ -82,6 +97,173 @@ function formatPrice(price) {
     return `TZS ${Number(price).toLocaleString()}`;
 }
 
+
+function updateOrderTotal() {
+    if (!currentProduct) return;
+
+    let quantity = Number.parseInt(quantityInput.value, 10);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        quantity = 1;
+        quantityInput.value = "1";
+    }
+
+    if (quantity > 99) {
+        quantity = 99;
+        quantityInput.value = "99";
+    }
+
+    totalPriceElement.textContent = formatPrice(
+        Number(currentProduct.price) * quantity
+    );
+}
+
+function showOrderMessage(message, type = "info") {
+    orderMessage.textContent = message;
+    orderMessage.className = `order-message order-message-${type}`;
+}
+
+async function placeOrder() {
+    if (!currentUser || !currentProduct || orderInProgress) {
+        return;
+    }
+
+    if (isModerator) {
+        showOrderMessage(
+            "Moderator accounts cannot place orders.",
+            "error"
+        );
+        return;
+    }
+
+    if (currentProduct.status !== "active") {
+        showOrderMessage(
+            "This product is no longer available.",
+            "error"
+        );
+        return;
+    }
+
+    if (currentProduct.sellerId === currentUser.uid) {
+        showOrderMessage(
+            "You cannot place an order for your own product.",
+            "error"
+        );
+        return;
+    }
+
+    const quantity = Number.parseInt(quantityInput.value, 10);
+    const unitPrice = Number(currentProduct.price);
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        showOrderMessage("Please enter a valid quantity.", "error");
+        return;
+    }
+
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+        showOrderMessage("This product has an invalid price.", "error");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Place an order for ${quantity} item(s) for ` +
+        `${formatPrice(unitPrice * quantity)}?`
+    );
+
+    if (!confirmed) return;
+
+    orderInProgress = true;
+    placeOrderButton.disabled = true;
+    placeOrderButton.innerHTML =
+        '<i class="bi bi-arrow-repeat"></i> Placing Order...';
+
+    try {
+        // Recheck that the product is still active and unchanged.
+        const productRef = doc(db, "products", productId);
+        const latestProductSnapshot = await getDoc(productRef);
+
+        if (!latestProductSnapshot.exists()) {
+            throw new Error("This product is no longer available.");
+        }
+
+        const latestProduct = latestProductSnapshot.data();
+
+        if (
+            latestProduct.status !== "active" ||
+            latestProduct.sellerId !== currentProduct.sellerId ||
+            Number(latestProduct.price) !== unitPrice
+        ) {
+            throw new Error(
+                "This product has changed. Refresh the page and try again."
+            );
+        }
+
+        if (latestProduct.sellerId === currentUser.uid) {
+            throw new Error("You cannot order your own product.");
+        }
+
+        const imageUrls = latestProduct.imageUrls || [];
+        const productImage =
+            imageUrls.length > 0 ? imageUrls[0] : "";
+
+        await addDoc(collection(db, "orders"), {
+            buyerId: currentUser.uid,
+            sellerId: latestProduct.sellerId,
+            productId: productId,
+            productTitle: latestProduct.title || "Product",
+            productImage: productImage,
+            unitPrice: unitPrice,
+            quantity: quantity,
+            totalPrice: unitPrice * quantity,
+            status: "pending",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        showOrderMessage(
+            "Order placed successfully! You can track it in Orders.",
+            "success"
+        );
+
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-check-circle"></i> Order Placed';
+
+        // Prevent accidental duplicate orders from repeated clicks.
+        placeOrderButton.disabled = true;
+
+    } catch (error) {
+        console.error("Failed to place order:", error);
+
+        showOrderMessage(
+            error.message === "Missing or insufficient permissions."
+                ? "Firebase denied this order. Check the Orders security rules."
+                : error.message || "Unable to place your order. Please try again.",
+            "error"
+        );
+
+        placeOrderButton.disabled = false;
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-bag-check"></i> Place Order';
+
+    } finally {
+        orderInProgress = false;
+    }
+}
+
+decreaseQuantityButton.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+    quantityInput.value = String(Math.max(1, quantity - 1));
+    updateOrderTotal();
+});
+
+increaseQuantityButton.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+    quantityInput.value = String(Math.min(99, quantity + 1));
+    updateOrderTotal();
+});
+
+quantityInput.addEventListener("input", updateOrderTotal);
+placeOrderButton.addEventListener("click", placeOrder);
 
 // --------------------------------------------------
 // DISPLAY PRODUCT IMAGES
@@ -219,6 +401,12 @@ async function loadProduct() {
         const product =
             productSnapshot.data();
 
+        currentProduct = product;
+        updateOrderTotal();
+
+        placeOrderButton.disabled = false;
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-bag-check"></i> Place Order';
 
         // ------------------------------------------
         // CHECK PRODUCT STATUS
@@ -291,25 +479,38 @@ async function loadProduct() {
     }
 }
 
-
 // --------------------------------------------------
 // AUTHENTICATION
 // --------------------------------------------------
 
-onAuthStateChanged(
-    auth,
-    (user) => {
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.replace("/login.html");
+        return;
+    }
 
-        if (!user) {
+    currentUser = user;
 
-            window.location.href =
-                "/login.html";
+    try {
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
 
-            return;
+        isModerator =
+            adminSnapshot.exists() &&
+            adminSnapshot.data().role === "ADMIN";
+
+        if (isModerator) {
+            placeOrderButton.disabled = true;
+            showOrderMessage(
+                "Moderator accounts cannot place orders.",
+                "error"
+            );
         }
 
-
-        loadProduct();
-
+        await loadProduct();
+    } catch (error) {
+        console.error("Account check failed:", error);
+        showProductError();
     }
-);
+});
