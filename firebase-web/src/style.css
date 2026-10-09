@@ -3316,3 +3316,290 @@ button {
 .moderator-filters .product-filter {
     flex: 0 0 auto;
 }
+
+/* =========================================
+   ARU MARKETPLACE - ORDERS PAGE
+========================================= */
+
+.orders-filters {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 0 12px;
+    border: 0;
+    scrollbar-width: none;
+}
+
+.orders-filters::-webkit-scrollbar {
+    display: none;
+}
+
+.orders-filters .product-filter {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 9px 16px;
+    border: 1px solid #dce3ec;
+    border-radius: 24px;
+    background: #fff;
+    color: #566273;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.orders-filters .product-filter.active {
+    background: #065597;
+    border-color: #065597;
+    color: #fff;
+}
+
+.orders-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 8px 0 16px;
+    padding: 5px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #eaf0f7;
+}
+
+.orders-tabs .orders-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 10px 8px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #5c6878;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    cursor: pointer;
+}
+
+.orders-tabs .orders-tab i {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.orders-tabs .orders-tab.active {
+    background: #fff;
+    color: #065597;
+    box-shadow: 0 2px 8px rgba(20, 45, 75, 0.08);
+}
+
+.orders-tabs .orders-tab:focus-visible,
+.orders-filters .product-filter:focus-visible {
+    outline: 2px solid #065597;
+    outline-offset: 2px;
+}
+
+#orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 20px;
+}
+
+#orders-list .my-products-message {
+    padding: 28px 18px;
+    border: 1px solid #e0e7ef;
+    border-radius: 16px;
+    background: #fff;
+    color: #6b7788;
+    text-align: center;
+    line-height: 1.6;
+}
+
+#orders-list .my-products-message h3 {
+    margin-bottom: 8px;
+    color: #243447;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#orders-list .my-products-message p {
+    margin-bottom: 8px;
+}
+
+#orders-count {
+    color: #065597;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+@media (max-width: 380px) {
+    .orders-tabs {
+        gap: 4px;
+        padding: 4px;
+    }
+
+    .orders-tabs .orders-tab {
+        gap: 4px;
+        padding: 9px 5px;
+        font-size: 11px;
+    }
+
+    .orders-filters .product-filter {
+        padding: 8px 13px;
+    }
+}
+
+
+/* Orders cards and action buttons */
+
+.order-card {
+    padding: 16px;
+    border: 1px solid #e0e7ef;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(20, 45, 75, 0.04);
+}
+
+.order-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.order-product {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.order-product-image {
+    width: 76px;
+    height: 76px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #f1f5f9;
+}
+
+.order-product-details {
+    min-width: 0;
+}
+
+.order-product-details h3 {
+    margin: 0 0 6px;
+    color: #263445;
+    font-size: 15px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.order-product-price {
+    margin: 0 0 4px;
+    color: #d55e1c;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.order-meta {
+    margin: 0;
+    color: #748094;
+    font-size: 12px;
+}
+
+.order-status {
+    flex-shrink: 0;
+    padding: 5px 9px;
+    border-radius: 20px;
+    background: #edf1f5;
+    color: #536173;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.order-status-pending {
+    background: #fff2d7;
+    color: #966000;
+}
+
+.order-status-accepted {
+    background: #e2efff;
+    color: #065597;
+}
+
+.order-status-completed {
+    background: #e0f5e8;
+    color: #197044;
+}
+
+.order-status-rejected,
+.order-status-cancelled {
+    background: #fde8e8;
+    color: #a12a2a;
+}
+
+.order-card-meta {
+    margin-top: 14px;
+    padding-top: 11px;
+    border-top: 1px solid #edf0f4;
+}
+
+.order-card-meta p {
+    margin: 0 0 5px;
+    color: #748094;
+    font-size: 11px;
+    overflow-wrap: anywhere;
+}
+
+.order-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.order-action {
+    min-height: 38px;
+    padding: 9px 13px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.order-action:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.order-action-primary {
+    background: #065597;
+    color: #fff;
+}
+
+.order-action-danger {
+    border-color: #f0caca;
+    background: #fff;
+    color: #b42323;
+}
+
+@media (max-width: 380px) {
+    .order-card {
+        padding: 12px;
+    }
+
+    .order-product-image {
+        width: 62px;
+        height: 62px;
+    }
+
+    .order-status {
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+}
