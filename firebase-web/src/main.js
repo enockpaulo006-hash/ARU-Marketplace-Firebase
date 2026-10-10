@@ -20,15 +20,24 @@ document.getElementById("app").innerHTML = `
                 required
             />
 
+            <label for="phoneNumber">
+                WhatsApp Number *
+            </label>
+
             <input
                 type="tel"
                 id="phoneNumber"
-                placeholder="Phone Number (e.g. 0712345678)"
+                placeholder="WhatsApp Number (e.g. 0712345678)"
                 maxlength="10"
                 pattern="(06|07)[0-9]{8}"
-                title="Phone number must be exactly 10 digits and start with 06 or 07"
+                title="Enter the WhatsApp number you actively use. Use 10 digits starting with 06 or 07."
                 required
             />
+
+            <small>
+                Enter the WhatsApp number you actively use.
+                Buyers will use it to contact you about your products.
+            </small>
 
             <input
                 type="email"
@@ -140,6 +149,11 @@ form.addEventListener("submit", async (event) => {
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
         });
+            // Save the WhatsApp contact separately
+    await setDoc(doc(db, "sellerContacts", user.uid), {
+        whatsapp: phoneNumber,
+        updatedAt: serverTimestamp()
+    });
 
         message.textContent =
             "Account created successfully! Check your email to verify your account.";
