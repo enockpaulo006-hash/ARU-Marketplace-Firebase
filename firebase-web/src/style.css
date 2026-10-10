@@ -3701,3 +3701,138 @@ button {
 .order-message-info {
     color: #526276;
 }
+
+/* ===== ARU Marketplace Profile Page ===== */
+
+body:has(.profile-page) {
+    background: #f4f7fb;
+    color: #1f2937;
+    padding-bottom: 95px;
+}
+
+.profile-page {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 16px 28px;
+}
+
+.profile-card {
+    background: #ffffff;
+    border: 1px solid #e0e7ef;
+    border-radius: 18px;
+    padding: 28px 20px;
+    box-shadow: 0 4px 14px rgba(24, 52, 85, 0.05);
+}
+
+.profile-avatar {
+    width: 88px;
+    height: 88px;
+    margin: 0 auto 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eaf3ff;
+    color: #075ca8;
+    border-radius: 50%;
+    font-size: 3rem;
+}
+
+.profile-heading {
+    color: #173b63;
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    overflow-wrap: anywhere;
+}
+
+.profile-role {
+    display: inline-block;
+    padding: 5px 12px;
+    margin-top: 4px;
+    border-radius: 20px;
+    background: #eaf3ff;
+    color: #075ca8;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.profile-details {
+    margin-top: 24px;
+    border-top: 1px solid #e5eaf0;
+}
+
+.profile-detail {
+    padding: 15px 0;
+    border-bottom: 1px solid #edf0f4;
+    overflow-wrap: anywhere;
+}
+
+.profile-detail:last-child {
+    border-bottom: none;
+}
+
+.profile-detail strong {
+    display: block;
+    color: #536579;
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.profile-detail span {
+    color: #1f2937;
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+}
+
+.profile-logout {
+    margin-top: 18px;
+    padding: 12px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+@media (max-width: 480px) {
+    .profile-page {
+        padding: 16px 12px 24px;
+    }
+
+    .profile-card {
+        padding: 24px 18px;
+    }
+}
+
+/* Center the Profile page header */
+body:has(.profile-page) .page-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 90px;
+    padding: 16px 48px;
+}
+
+body:has(.profile-page) .page-header .back-link {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+body:has(.profile-page) .page-header > div {
+    width: 100%;
+}
+
+body:has(.profile-page) .page-header h1 {
+    margin: 0 0 4px;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+body:has(.profile-page) .page-header p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
