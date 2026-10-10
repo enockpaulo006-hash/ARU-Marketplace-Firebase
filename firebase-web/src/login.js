@@ -141,7 +141,6 @@ form.addEventListener("submit", async (event) => {
         forgotPassword.disabled = false;
     }
 });
-
 // ========================================
 // FORGOT PASSWORD
 // ========================================
