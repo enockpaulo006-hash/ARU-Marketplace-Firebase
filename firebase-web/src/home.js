@@ -1,9 +1,7 @@
+
 import "./style.css";
 
-import {
-    onAuthStateChanged,
-    signOut
-} from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import {
     collection,
@@ -50,10 +48,10 @@ function normalizeCategory(value) {
         .replace(/[\s-]+/g, "_");
 
     const aliases = {
-        "phones_and_accessories": "phones_accessories",
-        "phone_accessories": "phones_accessories",
-        "books_and_notes": "books_notes",
-        "all_products": "all"
+        phones_and_accessories: "phones_accessories",
+        phone_accessories: "phones_accessories",
+        books_and_notes: "books_notes",
+        all_products: "all"
     };
 
     return aliases[category] || category;
@@ -61,13 +59,30 @@ function normalizeCategory(value) {
 
 // ========================================
 // AUTHENTICATION
+// Guests can browse without an account.
 // ========================================
 
 onAuthStateChanged(auth, async (user) => {
+    // Always allow visitors to remain on the home page.
+    if (!user) {
+        if (welcomeMessage) {
+            welcomeMessage.textContent = "Welcome to ARU Marketplace";
+        }
 
-    // Show Logout for signed-in users.
+        if (logoutButton) {
+            logoutButton.hidden = true;
+        }
+
+        return;
+    }
+
+    // Only signed-in users see Logout.
     if (logoutButton) {
         logoutButton.hidden = false;
+    }
+
+    if (welcomeMessage) {
+        welcomeMessage.textContent = "Welcome to ARU Marketplace";
     }
 
     try {
@@ -79,8 +94,7 @@ onAuthStateChanged(auth, async (user) => {
             const fullName = userData.fullName || "User";
 
             if (welcomeMessage) {
-                welcomeMessage.textContent =
-                    `Welcome, ${fullName}!`;
+                welcomeMessage.textContent = `Welcome, ${fullName}!`;
             }
         } else if (welcomeMessage) {
             welcomeMessage.textContent =
@@ -89,16 +103,17 @@ onAuthStateChanged(auth, async (user) => {
     } catch (error) {
         console.error("Could not load user profile:", error);
 
+        // Profile loading failure must not prevent browsing.
         if (welcomeMessage) {
             welcomeMessage.textContent =
                 `Welcome, ${user.email || "User"}!`;
         }
     }
 });
-// Load published products for both guests and signed-in users.
-loadProducts();
+
 // ========================================
-// LOAD APPROVED PRODUCTS FROM FIRESTORE
+// LOAD PUBLISHED PRODUCTS
+// This runs for guests and signed-in users.
 // ========================================
 
 async function loadProducts() {
@@ -124,7 +139,7 @@ async function loadProducts() {
             ...productDoc.data()
         }));
 
-        // Sort newest products first.
+        // Newest products first.
         allProducts.sort((a, b) => {
             const dateA = a.createdAt?.toMillis
                 ? a.createdAt.toMillis()
@@ -150,8 +165,11 @@ async function loadProducts() {
     }
 }
 
+// Load products independently of login status.
+loadProducts();
+
 // ========================================
-// SEARCH AND CATEGORY FILTERING
+// SEARCH AND PRODUCT RENDERING
 // ========================================
 
 function renderProducts() {
@@ -166,6 +184,7 @@ function renderProducts() {
         const title = String(product.title || "").toLowerCase();
         const description = String(product.description || "").toLowerCase();
         const location = String(product.location || "").toLowerCase();
+        const originalCategory = String(product.category || "").toLowerCase();
 
         const matchesCategory =
             selectedCategory === "all" ||
@@ -175,7 +194,7 @@ function renderProducts() {
             title.includes(searchTerm) ||
             description.includes(searchTerm) ||
             location.includes(searchTerm) ||
-            String(product.category || "").toLowerCase().includes(searchTerm);
+            originalCategory.includes(searchTerm);
 
         return matchesCategory && matchesSearch;
     });
@@ -258,7 +277,7 @@ function renderProducts() {
     });
 }
 
-// Search immediately as the user types.
+// Search as the user types.
 if (searchInput) {
     searchInput.addEventListener("input", renderProducts);
 }
@@ -280,6 +299,7 @@ if (productsContainer) {
             return;
         }
 
+        // Guests can open product details too.
         window.location.href =
             `/product.html?id=${encodeURIComponent(productId)}`;
     });
@@ -287,6 +307,7 @@ if (productsContainer) {
 
 // ========================================
 // LOGOUT
+// Signing out returns to public browsing.
 // ========================================
 
 if (logoutButton) {
@@ -295,7 +316,9 @@ if (logoutButton) {
 
         try {
             await signOut(auth);
-            window.location.replace("/login.html");
+
+            // No redirect to login. Remain on the home page.
+            // onAuthStateChanged will hide the Logout button.
         } catch (error) {
             console.error("Logout failed:", error);
             logoutButton.disabled = false;
@@ -347,8 +370,6 @@ function selectCategory(category) {
     });
 
     renderProducts();
-
-    console.log("Selected category:", selectedCategory);
 }
 
 // Compact category buttons.
