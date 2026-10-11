@@ -65,9 +65,24 @@ function normalizeCategory(value) {
 // ========================================
 
 onAuthStateChanged(auth, async (user) => {
+    // Guests can browse the marketplace.
     if (!user) {
-        window.location.replace("/login.html");
+        if (welcomeMessage) {
+            welcomeMessage.textContent =
+                "Welcome to ARU Marketplace";
+        }
+
+        // Hide Logout when nobody is logged in.
+        if (logoutButton) {
+            logoutButton.hidden = true;
+        }
+
         return;
+    }
+
+    // Show Logout for signed-in users.
+    if (logoutButton) {
+        logoutButton.hidden = false;
     }
 
     try {
@@ -79,22 +94,24 @@ onAuthStateChanged(auth, async (user) => {
             const fullName = userData.fullName || "User";
 
             if (welcomeMessage) {
-                welcomeMessage.textContent = `Welcome, ${fullName}!`;
+                welcomeMessage.textContent =
+                    `Welcome, ${fullName}!`;
             }
         } else if (welcomeMessage) {
-            welcomeMessage.textContent = `Welcome, ${user.email || "User"}!`;
+            welcomeMessage.textContent =
+                `Welcome, ${user.email || "User"}!`;
         }
     } catch (error) {
         console.error("Could not load user profile:", error);
 
         if (welcomeMessage) {
-            welcomeMessage.textContent = `Welcome, ${user.email || "User"}!`;
+            welcomeMessage.textContent =
+                `Welcome, ${user.email || "User"}!`;
         }
     }
-
-    await loadProducts();
 });
-
+// Load published products for both guests and signed-in users.
+loadProducts();
 // ========================================
 // LOAD APPROVED PRODUCTS FROM FIRESTORE
 // ========================================
