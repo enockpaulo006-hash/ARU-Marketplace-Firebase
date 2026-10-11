@@ -1,4 +1,3 @@
-
 import "./style.css";
 
 import {
@@ -65,20 +64,6 @@ function normalizeCategory(value) {
 // ========================================
 
 onAuthStateChanged(auth, async (user) => {
-    // Guests can browse the marketplace.
-    if (!user) {
-        if (welcomeMessage) {
-            welcomeMessage.textContent =
-                "Welcome to ARU Marketplace";
-        }
-
-        // Hide Logout when nobody is logged in.
-        if (logoutButton) {
-            logoutButton.hidden = true;
-        }
-
-        return;
-    }
 
     // Show Logout for signed-in users.
     if (logoutButton) {
