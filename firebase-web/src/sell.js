@@ -1,9 +1,6 @@
 import "./style.css";
-
 import { onAuthStateChanged } from "firebase/auth";
-
 import { auth, db } from "./firebase";
-
 import {
     collection,
     addDoc,
@@ -29,14 +26,13 @@ const sellMessage = document.getElementById("sell-message");
 let productCount = 0;
 let currentUser = null;
 
-
 // --------------------------------------------------
 // AUTH PROTECTION
 // --------------------------------------------------
 
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        window.location.href = "/login.html";
+        window.location.href = "/register.html";
         return;
     }
 
@@ -46,7 +42,6 @@ onAuthStateChanged(auth, (user) => {
         createProductForm();
     }
 });
-
 
 // --------------------------------------------------
 // CREATE PRODUCT FORM
@@ -81,10 +76,7 @@ function createProductForm() {
 
             <div class="image-upload-box">
                 <i class="bi bi-images"></i>
-
                 <p>Add a photo of your product</p>
-
-                
 
                 <label class="choose-images-button">
                     <i class="bi bi-plus-circle"></i>
@@ -194,7 +186,6 @@ function createProductForm() {
     }
 }
 
-
 // --------------------------------------------------
 // IMAGE UPLOAD + COMPRESSION
 // --------------------------------------------------
@@ -231,6 +222,7 @@ function setupProductImageUpload(productCard) {
                     `${file.name} is not a supported image file.`,
                     "error"
                 );
+
                 continue;
             }
 
@@ -239,6 +231,7 @@ function setupProductImageUpload(productCard) {
                     `${file.name} is larger than 5 MB. Please choose a smaller photo.`,
                     "error"
                 );
+
                 continue;
             }
 
@@ -276,8 +269,6 @@ function setupProductImageUpload(productCard) {
         input.value = "";
     });
 }
-
-
 // --------------------------------------------------
 // OPTIMIZE IMAGE
 // --------------------------------------------------
@@ -318,6 +309,7 @@ async function optimizeImage(file) {
     );
 
     let quality = JPEG_QUALITY;
+
     let blob = await canvasToBlob(
         canvas,
         "image/jpeg",
@@ -386,6 +378,7 @@ async function uploadToCloudinary(file) {
     const formData = new FormData();
 
     formData.append("file", file);
+
     formData.append(
         "upload_preset",
         CLOUDINARY_UPLOAD_PRESET
@@ -444,7 +437,6 @@ function loadImage(file) {
     });
 }
 
-
 // --------------------------------------------------
 // CANVAS TO BLOB
 // --------------------------------------------------
@@ -457,6 +449,7 @@ function canvasToBlob(canvas, type, quality) {
                     reject(
                         new Error("Image compression failed.")
                     );
+
                     return;
                 }
 
@@ -467,7 +460,6 @@ function canvasToBlob(canvas, type, quality) {
         );
     });
 }
-
 
 // --------------------------------------------------
 // CREATE SAFE FILE NAME
@@ -482,7 +474,6 @@ function createOptimizedFileName(originalName) {
     return `${baseName}-optimized.jpg`;
 }
 
-
 // --------------------------------------------------
 // IMAGE PREVIEW
 // --------------------------------------------------
@@ -493,11 +484,9 @@ function addImagePreview(
     previewGrid
 ) {
     const preview = document.createElement("div");
-
     preview.className = "image-preview";
 
     const image = document.createElement("img");
-
     const objectUrl = URL.createObjectURL(file);
 
     image.src = objectUrl;
@@ -549,7 +538,6 @@ function addImagePreview(
     previewGrid.appendChild(preview);
 }
 
-
 // --------------------------------------------------
 // REFRESH IMAGE NUMBERS
 // --------------------------------------------------
@@ -568,7 +556,6 @@ function refreshImageNumbers(productCard) {
     });
 }
 
-
 // --------------------------------------------------
 // FORMAT FILE SIZE
 // --------------------------------------------------
@@ -584,8 +571,6 @@ function formatFileSize(bytes) {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-
 // --------------------------------------------------
 // RENUMBER PRODUCTS
 // --------------------------------------------------
@@ -611,7 +596,6 @@ function renumberProducts() {
     productCount = cards.length;
 }
 
-
 // --------------------------------------------------
 // ADD ANOTHER PRODUCT
 // --------------------------------------------------
@@ -630,7 +614,6 @@ addProductButton.addEventListener("click", () => {
     });
 });
 
-
 // --------------------------------------------------
 // SUBMIT ALL PRODUCTS
 // --------------------------------------------------
@@ -644,6 +627,7 @@ submitAllButton.addEventListener("click", async () => {
             "Please add at least one product.",
             "error"
         );
+
         return;
     }
 
@@ -689,6 +673,7 @@ submitAllButton.addEventListener("click", async () => {
             "Please complete all required fields and add at least one photo to each product.",
             "error"
         );
+
         return;
     }
 
@@ -714,7 +699,6 @@ submitAllButton.addEventListener("click", async () => {
         // ------------------------------------------
 
         for (const card of cards) {
-
             const title =
                 card.querySelector(".product-title").value.trim();
 
@@ -746,7 +730,6 @@ submitAllButton.addEventListener("click", async () => {
             const imageDetails = [];
 
             for (const image of images) {
-
                 submitAllButton.innerHTML = `
                     <i class="bi bi-cloud-upload"></i>
                     Uploading ${uploadedCount + 1}/${totalImages}...
@@ -785,23 +768,14 @@ submitAllButton.addEventListener("click", async () => {
 
             const productData = {
                 sellerId: currentUser.uid,
-
                 title: title,
-
                 category: category,
-
                 price: price,
-
                 description: description,
-
                 imageUrls: imageUrls,
-
                 imageDetails: imageDetails,
-
                 productCondition: condition,
-
                 location: location,
-
                 status: "pending",
                 rejectionReason: "",
                 reviewedBy: "",
@@ -841,7 +815,6 @@ submitAllButton.addEventListener("click", async () => {
         createProductForm();
 
     } catch (error) {
-
         console.error(
             "Product submission failed:",
             error
@@ -854,7 +827,6 @@ submitAllButton.addEventListener("click", async () => {
         );
 
     } finally {
-
         submitAllButton.disabled = false;
 
         submitAllButton.innerHTML = `
@@ -863,7 +835,6 @@ submitAllButton.addEventListener("click", async () => {
         `;
     }
 });
-
 
 // --------------------------------------------------
 // MESSAGE
@@ -879,6 +850,7 @@ function showSellMessage(message, type) {
         behavior: "smooth"
     });
 }
+
 // ========================================
 // INITIAL PRODUCT FORM
 // ========================================
