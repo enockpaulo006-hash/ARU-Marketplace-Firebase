@@ -42,12 +42,19 @@ document.getElementById("app").innerHTML = `
                 <button
                     type="button"
                     class="password-toggle"
-                    data-target="password"
+                    id="password-toggle"
                     aria-label="Show password"
                     aria-pressed="false"
+                    title="Show password"
                 >
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                    <svg
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path
+                            d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"
+                        ></path>
                         <circle cx="12" cy="12" r="3"></circle>
                     </svg>
                 </button>
@@ -79,42 +86,52 @@ document.getElementById("app").innerHTML = `
 // PASSWORD VISIBILITY TOGGLE
 // ========================================
 
-document.querySelectorAll(".password-toggle").forEach((button) => {
-    button.addEventListener("click", () => {
-        const input = document.getElementById(button.dataset.target);
+const passwordInput = document.getElementById("password");
+const passwordToggle = document.getElementById("password-toggle");
 
-        if (!input) return;
+passwordToggle.addEventListener("click", () => {
+    const showPassword = passwordInput.type === "password";
 
-        const showPassword = input.type === "password";
+    passwordInput.type = showPassword ? "text" : "password";
 
-        input.type = showPassword ? "text" : "password";
+    passwordToggle.setAttribute(
+        "aria-label",
+        showPassword ? "Hide password" : "Show password"
+    );
 
-        button.setAttribute(
-            "aria-label",
-            showPassword ? "Hide password" : "Show password"
-        );
+    passwordToggle.setAttribute(
+        "title",
+        showPassword ? "Hide password" : "Show password"
+    );
 
-        button.setAttribute(
-            "aria-pressed",
-            String(showPassword)
-        );
+    passwordToggle.setAttribute(
+        "aria-pressed",
+        String(showPassword)
+    );
 
-        button.innerHTML = showPassword
-            ? `
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 3l18 18"></path>
-                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
-                    <path d="M9.9 5.2A11 11 0 0 1 12 5c6.4 0 10 7 10 7s-1.2 2.4-3.1 3.9"></path>
-                    <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"></path>
-                </svg>
-            `
-            : `
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-            `;
-    });
+    passwordToggle.innerHTML = showPassword
+        ? `
+            <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <path d="M3 3l18 18"></path>
+                <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
+                <path d="M9.9 5.2A11 11 0 0 1 12 5c6.4 0 10 7 10 7s-1.2 2.4-3.1 3.9"></path>
+                <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"></path>
+            </svg>
+        `
+        : `
+            <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        `;
 });
 
 // ========================================
@@ -133,11 +150,8 @@ const loginButton = document.getElementById("login-button");
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const email =
-        document.getElementById("email").value.trim();
-
-    const password =
-        document.getElementById("password").value;
+    const email = document.getElementById("email").value.trim();
+    const password = passwordInput.value;
 
     loginButton.disabled = true;
     forgotPassword.disabled = true;
@@ -145,20 +159,19 @@ form.addEventListener("submit", async (event) => {
     message.textContent = "Logging in...";
 
     try {
-        // 1. Authenticate the user
-        const userCredential =
-            await signInWithEmailAndPassword(
-                auth,
-                email,
-                password
-            );
+        // 1. Authenticate the user with Firebase
+        const userCredential = await signInWithEmailAndPassword(
+            auth,
+            email,
+            password
+        );
 
         const user = userCredential.user;
 
         console.log("Signed-in UID:", user.uid);
         console.log("Signed-in email:", user.email);
 
-        // 2. Check whether the user is an admin
+        // 2. Verify the user's moderator/admin role
         let isModerator = false;
 
         try {
@@ -180,13 +193,10 @@ form.addEventListener("submit", async (event) => {
             console.log("Moderator detected:", isModerator);
 
         } catch (roleError) {
-            console.error(
-                "Moderator role check failed:",
-                roleError
-            );
+            console.error("Moderator role check failed:", roleError);
 
             message.textContent =
-                "Your login succeeded, but your account role could not be verified. Please refresh and try again.";
+                "Your login succeeded, but your account role could not be verified. Please check your connection and try again.";
 
             loginButton.disabled = false;
             forgotPassword.disabled = false;
@@ -194,17 +204,12 @@ form.addEventListener("submit", async (event) => {
             return;
         }
 
-        // 3. Redirect according to the verified role
+        // 3. Redirect based on the verified role
         if (isModerator) {
-            message.textContent =
-                "Opening Moderator Dashboard...";
-
+            message.textContent = "Opening Moderator Dashboard...";
             window.location.replace("/moderator.html");
-
         } else {
-            message.textContent =
-                "Opening ARU Marketplace...";
-
+            message.textContent = "Opening ARU Marketplace...";
             window.location.replace("/home.html");
         }
 
@@ -216,20 +221,22 @@ form.addEventListener("submit", async (event) => {
             error.code === "auth/wrong-password" ||
             error.code === "auth/user-not-found"
         ) {
-            message.textContent =
-                "Incorrect email or password.";
+            message.textContent = "Incorrect email or password.";
 
         } else if (error.code === "auth/invalid-email") {
-            message.textContent =
-                "Please enter a valid email address.";
+            message.textContent = "Please enter a valid email address.";
 
         } else if (error.code === "auth/too-many-requests") {
             message.textContent =
                 "Too many attempts. Please try again later.";
 
+        } else if (error.code === "auth/network-request-failed") {
+            message.textContent =
+                "Network error. Check your internet connection and try again.";
+
         } else {
             message.textContent =
-                "Login failed. Please check the browser console.";
+                "Login failed. Please try again.";
         }
 
         loginButton.disabled = false;
@@ -242,20 +249,16 @@ form.addEventListener("submit", async (event) => {
 // ========================================
 
 forgotPassword.addEventListener("click", async () => {
-    const email =
-        document.getElementById("email").value.trim();
+    const email = document.getElementById("email").value.trim();
 
     if (!email) {
-        message.textContent =
-            "Enter your email address first.";
-
+        message.textContent = "Enter your email address first.";
+        document.getElementById("email").focus();
         return;
     }
 
     forgotPassword.disabled = true;
-
-    message.textContent =
-        "Sending password reset email...";
+    message.textContent = "Sending password reset email...";
 
     try {
         await sendPasswordResetEmail(auth, email);
@@ -264,18 +267,19 @@ forgotPassword.addEventListener("click", async () => {
             "Password reset email sent. Check your email.";
 
     } catch (error) {
-        console.error(
-            "Password reset failed:",
-            error
-        );
+        console.error("Password reset failed:", error);
 
         if (error.code === "auth/invalid-email") {
             message.textContent =
                 "Please enter a valid email address.";
 
+        } else if (error.code === "auth/network-request-failed") {
+            message.textContent =
+                "Network error. Check your internet connection.";
+
         } else {
             message.textContent =
-                "Could not send password reset email. Please try again.";
+                "Could not send the password reset email. Please try again.";
         }
 
     } finally {
