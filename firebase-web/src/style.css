@@ -3936,3 +3936,99 @@ body:has(.profile-page) .page-header p {
         height: 40px !important;
     }
 }
+/* ========================================
+   LOGIN PASSWORD VISIBILITY BUTTON
+   ======================================== */
+
+#login-form .password-field {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+}
+
+#login-form .password-field input#password {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    padding-right: 54px !important;
+}
+
+#login-form .password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 6px !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    width: 40px !important;
+    height: 44px !important;
+    min-width: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+
+    color: #555555 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+
+    cursor: pointer !important;
+    z-index: 10 !important;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+#login-form .password-toggle svg {
+    display: block !important;
+    width: 22px !important;
+    height: 22px !important;
+
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+
+    pointer-events: none !important;
+}
+
+#login-form .password-toggle:hover,
+#login-form .password-toggle:focus-visible {
+    color: #111111 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+#login-form .password-toggle:focus-visible {
+    outline: 2px solid #555555;
+    outline-offset: -3px;
+}
+
+@media (max-width: 480px) {
+    #login-form .password-field input#password {
+        font-size: 16px !important;
+        padding-right: 54px !important;
+    }
+
+    #login-form .password-toggle {
+        right: 5px !important;
+        width: 42px !important;
+        height: 44px !important;
+    }
+
+    #login-form .password-toggle svg {
+        width: 23px !important;
+        height: 23px !important;
+    }
+}
