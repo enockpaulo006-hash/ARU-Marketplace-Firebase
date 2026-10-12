@@ -5,8 +5,16 @@ import {
     sendPasswordResetEmail
 } from "firebase/auth";
 
-import { doc, getDoc } from "firebase/firestore";
+import {
+    doc,
+    getDoc
+} from "firebase/firestore";
+
 import { auth, db } from "./firebase.js";
+
+// ========================================
+// LOGIN FORM
+// ========================================
 
 document.getElementById("app").innerHTML = `
     <div class="auth-container">
@@ -22,15 +30,32 @@ document.getElementById("app").innerHTML = `
                 required
             />
 
-            <input
-                type="password"
-                id="password"
-                placeholder="Password"
-                autocomplete="current-password"
-                required
-            />
+            <div class="password-field">
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Password"
+                    autocomplete="current-password"
+                    required
+                />
 
-            <button type="submit">Login</button>
+                <button
+                    type="button"
+                    class="password-toggle"
+                    data-target="password"
+                    aria-label="Show password"
+                    aria-pressed="false"
+                >
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </div>
+
+            <button type="submit" id="login-button">
+                Login
+            </button>
         </form>
 
         <button
@@ -41,19 +66,65 @@ document.getElementById("app").innerHTML = `
             Forgot Password?
         </button>
 
-        <p id="message" role="status"></p>
+        <p id="message" role="status" aria-live="polite"></p>
 
         <p class="auth-link">
             Don't have an account?
-            <a href="/">Create Account</a>
+            <a href="/register.html">Create Account</a>
         </p>
     </div>
 `;
 
+// ========================================
+// PASSWORD VISIBILITY TOGGLE
+// ========================================
+
+document.querySelectorAll(".password-toggle").forEach((button) => {
+    button.addEventListener("click", () => {
+        const input = document.getElementById(button.dataset.target);
+
+        if (!input) return;
+
+        const showPassword = input.type === "password";
+
+        input.type = showPassword ? "text" : "password";
+
+        button.setAttribute(
+            "aria-label",
+            showPassword ? "Hide password" : "Show password"
+        );
+
+        button.setAttribute(
+            "aria-pressed",
+            String(showPassword)
+        );
+
+        button.innerHTML = showPassword
+            ? `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3l18 18"></path>
+                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
+                    <path d="M9.9 5.2A11 11 0 0 1 12 5c6.4 0 10 7 10 7s-1.2 2.4-3.1 3.9"></path>
+                    <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.2 0 2.3-.3 3.3-.7"></path>
+                </svg>
+            `
+            : `
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            `;
+    });
+});
+
+// ========================================
+// FORM ELEMENTS
+// ========================================
+
 const form = document.getElementById("login-form");
 const message = document.getElementById("message");
 const forgotPassword = document.getElementById("forgot-password");
-const loginButton = form.querySelector('button[type="submit"]');
+const loginButton = document.getElementById("login-button");
 
 // ========================================
 // LOGIN
@@ -62,27 +133,32 @@ const loginButton = form.querySelector('button[type="submit"]');
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value;
+    const email =
+        document.getElementById("email").value.trim();
+
+    const password =
+        document.getElementById("password").value;
 
     loginButton.disabled = true;
     forgotPassword.disabled = true;
+
     message.textContent = "Logging in...";
 
     try {
-        // 1. Authenticate the user.
-        const userCredential = await signInWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
+        // 1. Authenticate the user
+        const userCredential =
+            await signInWithEmailAndPassword(
+                auth,
+                email,
+                password
+            );
 
         const user = userCredential.user;
 
         console.log("Signed-in UID:", user.uid);
         console.log("Signed-in email:", user.email);
 
-        // 2. Check whether the signed-in UID is an admin.
+        // 2. Check whether the user is an admin
         let isModerator = false;
 
         try {
@@ -95,26 +171,40 @@ form.addEventListener("submit", async (event) => {
 
             isModerator = adminRole === "ADMIN";
 
-            console.log("Admin document exists:", adminSnapshot.exists());
+            console.log(
+                "Admin document exists:",
+                adminSnapshot.exists()
+            );
+
             console.log("Admin role:", adminRole);
             console.log("Moderator detected:", isModerator);
+
         } catch (roleError) {
-            console.error("Moderator role check failed:", roleError);
+            console.error(
+                "Moderator role check failed:",
+                roleError
+            );
 
             message.textContent =
                 "Your login succeeded, but your account role could not be verified. Please refresh and try again.";
 
             loginButton.disabled = false;
             forgotPassword.disabled = false;
+
             return;
         }
 
-        // 3. Redirect according to the verified role.
+        // 3. Redirect according to the verified role
         if (isModerator) {
-            message.textContent = "Opening Moderator Dashboard...";
+            message.textContent =
+                "Opening Moderator Dashboard...";
+
             window.location.replace("/moderator.html");
+
         } else {
-            message.textContent = "Opening ARU Marketplace...";
+            message.textContent =
+                "Opening ARU Marketplace...";
+
             window.location.replace("/home.html");
         }
 
@@ -126,12 +216,17 @@ form.addEventListener("submit", async (event) => {
             error.code === "auth/wrong-password" ||
             error.code === "auth/user-not-found"
         ) {
-            message.textContent = "Incorrect email or password.";
+            message.textContent =
+                "Incorrect email or password.";
+
         } else if (error.code === "auth/invalid-email") {
-            message.textContent = "Please enter a valid email address.";
+            message.textContent =
+                "Please enter a valid email address.";
+
         } else if (error.code === "auth/too-many-requests") {
             message.textContent =
                 "Too many attempts. Please try again later.";
+
         } else {
             message.textContent =
                 "Login failed. Please check the browser console.";
@@ -141,20 +236,26 @@ form.addEventListener("submit", async (event) => {
         forgotPassword.disabled = false;
     }
 });
+
 // ========================================
 // FORGOT PASSWORD
 // ========================================
 
 forgotPassword.addEventListener("click", async () => {
-    const email = document.getElementById("email").value.trim();
+    const email =
+        document.getElementById("email").value.trim();
 
     if (!email) {
-        message.textContent = "Enter your email address first.";
+        message.textContent =
+            "Enter your email address first.";
+
         return;
     }
 
     forgotPassword.disabled = true;
-    message.textContent = "Sending password reset email...";
+
+    message.textContent =
+        "Sending password reset email...";
 
     try {
         await sendPasswordResetEmail(auth, email);
@@ -163,14 +264,20 @@ forgotPassword.addEventListener("click", async () => {
             "Password reset email sent. Check your email.";
 
     } catch (error) {
-        console.error("Password reset failed:", error);
+        console.error(
+            "Password reset failed:",
+            error
+        );
 
         if (error.code === "auth/invalid-email") {
-            message.textContent = "Please enter a valid email address.";
+            message.textContent =
+                "Please enter a valid email address.";
+
         } else {
             message.textContent =
                 "Could not send password reset email. Please try again.";
         }
+
     } finally {
         forgotPassword.disabled = false;
     }
