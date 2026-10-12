@@ -1,14 +1,259 @@
+<!DOCTYPE html>
 
-<!doctype html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ARU Marketplace</title>
-    <meta http-equiv="refresh" content="0; url=/home.html">
+    <meta
+        name="description"
+        content="Discover products and services from the Ardhi University community."
+    >
+
+    <!-- Bootstrap Icons -->
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    >
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="/src/style.css">
 </head>
+
 <body>
-    <p>Opening ARU Marketplace...</p>
-    <a href="/home.html">Open Marketplace</a>
+
+    <!-- HEADER -->
+    <header class="marketplace-header">
+        <div class="header-content">
+
+            <div class="brand">
+                <i class="bi bi-shop"></i>
+                <h1>ARU Marketplace</h1>
+            </div>
+
+            <button
+                id="logout-button"
+                type="button"
+                class="logout-button"
+                hidden
+            >
+                <i class="bi bi-box-arrow-right"></i>
+                <span>Logout</span>
+            </button>
+
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="marketplace-container">
+
+        <!-- WELCOME -->
+        <section class="welcome-section">
+            <p class="welcome-label">Welcome</p>
+
+            <h2 id="welcome-message">
+                Welcome to ARU Marketplace
+            </h2>
+
+            <p class="welcome-description">
+                Discover products and services within the ARU community.
+                Browse freely, or create an account to start selling.
+            </p>
+        </section>
+
+        <!-- SEARCH -->
+        <section class="search-section">
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+
+                <input
+                    type="search"
+                    id="search-input"
+                    placeholder="Search products..."
+                    aria-label="Search products"
+                >
+            </div>
+        </section>
+
+        <!-- CATEGORIES -->
+        <section class="categories-section">
+
+            <div class="categories-heading">
+                <div>
+                    <p class="section-label">Explore</p>
+                    <h2>Categories</h2>
+                </div>
+
+                <button
+                    type="button"
+                    id="categories-toggle"
+                    class="categories-toggle"
+                    aria-expanded="false"
+                    aria-controls="category-menu"
+                >
+                    <span>View</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+
+            <!-- Category icons -->
+            <div id="category-icons" class="category-icons">
+
+                <button type="button" class="category-icon active"
+                    data-category="all" title="All Products">
+                    <i class="bi bi-grid"></i>
+                    <span>All</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="electronics" title="Electronics">
+                    <i class="bi bi-laptop"></i>
+                    <span>Electronics</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="phones_accessories"
+                    title="Phones & Accessories">
+                    <i class="bi bi-phone"></i>
+                    <span>Phones</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="books_notes" title="Books & Notes">
+                    <i class="bi bi-book"></i>
+                    <span>Books</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="fashion" title="Fashion">
+                    <i class="bi bi-bag"></i>
+                    <span>Fashion</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="hostel_items" title="Hostel Items">
+                    <i class="bi bi-house"></i>
+                    <span>Hostel</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="services" title="Services">
+                    <i class="bi bi-tools"></i>
+                    <span>Services</span>
+                </button>
+
+                <button type="button" class="category-icon"
+                    data-category="other" title="Other">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <span>Other</span>
+                </button>
+
+            </div>
+
+            <!-- Expanded category menu -->
+            <div id="category-menu" class="category-menu" hidden>
+
+                <button type="button" class="category-option"
+                    data-category="all">
+                    <i class="bi bi-grid"></i>
+                    <span>All Products</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="electronics">
+                    <i class="bi bi-laptop"></i>
+                    <span>Electronics</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="phones_accessories">
+                    <i class="bi bi-phone"></i>
+                    <span>Phones & Accessories</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="books_notes">
+                    <i class="bi bi-book"></i>
+                    <span>Books & Notes</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="fashion">
+                    <i class="bi bi-bag"></i>
+                    <span>Fashion</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="hostel_items">
+                    <i class="bi bi-house"></i>
+                    <span>Hostel Items</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="services">
+                    <i class="bi bi-tools"></i>
+                    <span>Services</span>
+                </button>
+
+                <button type="button" class="category-option"
+                    data-category="other">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    <span>Other</span>
+                </button>
+
+            </div>
+
+        </section>
+
+        <!-- PRODUCTS -->
+        <section class="products-section">
+
+            <div class="section-heading">
+                <div>
+                    <p class="section-label">Marketplace</p>
+                    <h2>Latest Products</h2>
+                </div>
+            </div>
+
+            <div id="products-container" class="products-grid">
+                <p class="empty-products" role="status">
+                    Loading products...
+                </p>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+
+        <a href="/home.html" class="active" aria-current="page">
+            <i class="bi bi-house-fill"></i>
+            <span>Home</span>
+        </a>
+
+        <a href="/orders.html">
+            <i class="bi bi-box-seam"></i>
+            <span>Orders</span>
+        </a>
+
+        <a href="/sell.html">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Sell</span>
+        </a>
+
+        <a href="/my-products.html" class="bottom-nav-item">
+            <i class="bi bi-person-circle"></i>
+            <span>Profile</span>
+        </a>
+
+    </nav>
+
+    <!-- Marketplace logic -->
+    <script type="module" src="/src/home.js"></script>
+
 </body>
 </html>
