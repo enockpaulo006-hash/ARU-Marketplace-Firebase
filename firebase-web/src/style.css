@@ -3838,79 +3838,101 @@ body:has(.profile-page) .page-header p {
 }
 
 
-/* Professional password visibility icon */
+/* ========================================
+   PASSWORD FIELD — MOBILE + DESKTOP FIX
+======================================== */
 
 .password-field {
-    position: relative;
-    width: 100%;
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
     min-width: 0;
+    overflow: visible !important;
 }
 
-.password-field input {
-    width: 100%;
-    box-sizing: border-box;
-    padding-right: 44px !important;
+.password-field input,
+.auth-container .password-field input {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    padding-right: 48px !important;
 }
 
-.password-toggle {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    transform: translateY(-50%);
+.password-field .password-toggle,
+.auth-container .password-field .password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
 
-    width: 24px;
-    height: 24px;
-    padding: 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 32px !important;
+    height: 36px !important;
+    min-width: 32px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 
-    border: none;
-    background: transparent;
-    color: #737373;
-    border-radius: 0;
-    cursor: pointer;
-    z-index: 2;
-    box-shadow: none;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+
+    color: #737373 !important;
+    cursor: pointer !important;
+    z-index: 10 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
 }
 
-.password-toggle:hover,
-.password-toggle:focus,
-.password-toggle:active {
-    background: transparent;
-    color: #222;
-    box-shadow: none;
+.password-field .password-toggle svg {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    max-width: none !important;
+
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.7 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+
+    pointer-events: none !important;
 }
 
-.password-toggle:focus-visible {
+.password-field .password-toggle:hover,
+.password-field .password-toggle:active {
+    background: transparent !important;
+    color: #222 !important;
+    box-shadow: none !important;
+}
+
+.password-field .password-toggle:focus-visible {
     outline: 2px solid #2563eb;
     outline-offset: 2px;
-    border-radius: 3px;
-}
-
-.password-toggle svg {
-    display: block;
-    width: 20px;
-    height: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    pointer-events: none;
 }
 
 @media (max-width: 480px) {
-    .password-field input {
-        font-size: 16px;
-        padding-right: 44px !important;
+    .password-field input,
+    .auth-container .password-field input {
+        font-size: 16px !important;
+        padding-right: 48px !important;
     }
 
-    .password-toggle {
-        right: 10px;
-        width: 28px;
-        height: 28px;
+    .password-field .password-toggle,
+    .auth-container .password-field .password-toggle {
+        right: 6px !important;
+        width: 36px !important;
+        height: 40px !important;
     }
 }
