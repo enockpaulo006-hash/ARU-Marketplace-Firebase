@@ -1,6 +1,9 @@
+
 import "./style.css";
+
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
+
 import {
     collection,
     addDoc,
@@ -15,6 +18,7 @@ const JPEG_QUALITY = 0.82;
 
 const CLOUDINARY_CLOUD_NAME = "didth7hcw";
 const CLOUDINARY_UPLOAD_PRESET = "aru_marketplace_products";
+
 const CLOUDINARY_UPLOAD_URL =
     `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
@@ -96,7 +100,6 @@ function createProductForm() {
 
         <div class="form-group">
             <label for="title-${productCount}">Product title</label>
-
             <input
                 type="text"
                 id="title-${productCount}"
@@ -109,7 +112,6 @@ function createProductForm() {
         <div class="form-row">
             <div class="form-group">
                 <label>Category</label>
-
                 <select class="product-category" required>
                     <option value="">Select category</option>
                     <option value="electronics">Electronics</option>
@@ -124,7 +126,6 @@ function createProductForm() {
 
             <div class="form-group">
                 <label>Price (TZS)</label>
-
                 <input
                     type="number"
                     class="product-price"
@@ -138,7 +139,6 @@ function createProductForm() {
         <div class="form-row">
             <div class="form-group">
                 <label>Condition</label>
-
                 <select class="product-condition" required>
                     <option value="">Select condition</option>
                     <option value="new">New</option>
@@ -148,7 +148,6 @@ function createProductForm() {
 
             <div class="form-group">
                 <label>Location</label>
-
                 <input
                     type="text"
                     class="product-location"
@@ -160,7 +159,6 @@ function createProductForm() {
 
         <div class="form-group">
             <label>Description</label>
-
             <textarea
                 class="product-description"
                 rows="4"
@@ -171,7 +169,6 @@ function createProductForm() {
     `;
 
     productsList.appendChild(productCard);
-
     setupProductImageUpload(productCard);
 
     const removeButton = productCard.querySelector(
@@ -222,7 +219,6 @@ function setupProductImageUpload(productCard) {
                     `${file.name} is not a supported image file.`,
                     "error"
                 );
-
                 continue;
             }
 
@@ -231,7 +227,6 @@ function setupProductImageUpload(productCard) {
                     `${file.name} is larger than 5 MB. Please choose a smaller photo.`,
                     "error"
                 );
-
                 continue;
             }
 
@@ -248,7 +243,6 @@ function setupProductImageUpload(productCard) {
 
             try {
                 const optimizedFile = await optimizeImage(file);
-
                 productCard.selectedFiles.push(optimizedFile);
 
                 addImagePreview(
@@ -269,6 +263,7 @@ function setupProductImageUpload(productCard) {
         input.value = "";
     });
 }
+
 // --------------------------------------------------
 // OPTIMIZE IMAGE
 // --------------------------------------------------
@@ -294,7 +289,6 @@ async function optimizeImage(file) {
     }
 
     const canvas = document.createElement("canvas");
-
     canvas.width = width;
     canvas.height = height;
 
@@ -378,7 +372,96 @@ async function uploadToCloudinary(file) {
     const formData = new FormData();
 
     formData.append("file", file);
+    formData.append(
+        "upload_preset",
+        CLOUDINARY_UPLOAD_PRESET
+    );
 
+    const response = await fetch(
+        CLOUDINARY_UPLOAD_URL,
+        {
+            method: "POST",
+            body: formData
+        }
+    );
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+
+        throw new Error(
+            errorData.error?.message ||
+            "Image upload failed. Please try again."
+        );
+    }
+
+    const data = await response.json();
+
+    if (!data.secure_url) {
+        throw new Error("Cloudinary did not return an image URL.");
+    }
+
+    return data.secure_url;
+}
+
+// --------------------------------------------------
+// LOAD IMAGE
+// --------------------------------------------------
+
+function loadImage(file) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(image);
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("Could not load the selected image."));
+        };
+
+        image.src = objectUrl;
+    });
+}
+
+// --------------------------------------------------
+// CANVAS TO BLOB
+// --------------------------------------------------
+
+function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error("Image compression failed."));
+                }
+            },
+            type,
+            quality
+        );
+    });
+}
+
+// --------------------------------------------------
+// CREATE OPTIMIZED FILE NAME
+// --------------------------------------------------
+
+function createOptimizedFileName(originalName) {
+    const baseName = originalName
+        .replace(/\.[^/.]+$/, "")
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+
+    return `${baseName}_${Date.now()}.jpg`;
+}
+
+async function uploadToCloudinary(file) {
+    const formData = new FormData();
+
+    formData.append("file", file);
     formData.append(
         "upload_preset",
         CLOUDINARY_UPLOAD_PRESET
@@ -413,58 +496,6 @@ async function uploadToCloudinary(file) {
     };
 }
 
-// --------------------------------------------------
-// LOAD IMAGE
-// --------------------------------------------------
-
-function loadImage(file) {
-    return new Promise((resolve, reject) => {
-        const image = new Image();
-
-        const objectUrl = URL.createObjectURL(file);
-
-        image.onload = () => {
-            URL.revokeObjectURL(objectUrl);
-            resolve(image);
-        };
-
-        image.onerror = () => {
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error("Unable to load image."));
-        };
-
-        image.src = objectUrl;
-    });
-}
-
-// --------------------------------------------------
-// CANVAS TO BLOB
-// --------------------------------------------------
-
-function canvasToBlob(canvas, type, quality) {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob(
-            (blob) => {
-                if (!blob) {
-                    reject(
-                        new Error("Image compression failed.")
-                    );
-
-                    return;
-                }
-
-                resolve(blob);
-            },
-            type,
-            quality
-        );
-    });
-}
-
-// --------------------------------------------------
-// CREATE SAFE FILE NAME
-// --------------------------------------------------
-
 function createOptimizedFileName(originalName) {
     const baseName = originalName
         .replace(/\.[^/.]+$/, "")
@@ -474,15 +505,7 @@ function createOptimizedFileName(originalName) {
     return `${baseName}-optimized.jpg`;
 }
 
-// --------------------------------------------------
-// IMAGE PREVIEW
-// --------------------------------------------------
-
-function addImagePreview(
-    productCard,
-    file,
-    previewGrid
-) {
+function addImagePreview(productCard, file, previewGrid) {
     const preview = document.createElement("div");
     preview.className = "image-preview";
 
@@ -493,27 +516,59 @@ function addImagePreview(
     image.alt = "Product photo";
 
     const removeButton = document.createElement("button");
-
     removeButton.type = "button";
     removeButton.className = "remove-image-button";
-
     removeButton.innerHTML = `
         <i class="bi bi-x"></i>
     `;
 
     const imageNumber = document.createElement("span");
-
     imageNumber.className = "image-number";
-
     imageNumber.textContent =
         `${productCard.selectedFiles.length}`;
 
     const imageSize = document.createElement("span");
-
     imageSize.className = "image-size";
+    imageSize.textContent = formatFileSize(file.size);
 
-    imageSize.textContent =
-        formatFileSize(file.size);
+    // Optional price for this specific photo/item.
+    const photoPriceLabel = document.createElement("label");
+    photoPriceLabel.className = "photo-price-label";
+    photoPriceLabel.textContent = "Price for this photo (TZS)";
+    photoPriceLabel.style.display = "flex";
+    photoPriceLabel.style.flexDirection = "column";
+    photoPriceLabel.style.gap = "6px";
+    photoPriceLabel.style.marginTop = "10px";
+    photoPriceLabel.style.fontSize = "13px";
+    photoPriceLabel.style.fontWeight = "600";
+
+    const photoPriceInput = document.createElement("input");
+    photoPriceInput.type = "number";
+    photoPriceInput.className = "photo-price-input";
+    photoPriceInput.min = "0";
+    photoPriceInput.step = "1";
+    photoPriceInput.inputMode = "numeric";
+    photoPriceInput.placeholder = "Optional";
+    photoPriceInput.style.width = "100%";
+    photoPriceInput.style.minWidth = "0";
+    photoPriceInput.style.boxSizing = "border-box";
+    photoPriceInput.style.padding = "10px";
+    photoPriceInput.style.border = "1px solid #d1d5db";
+    photoPriceInput.style.borderRadius = "8px";
+    photoPriceInput.style.fontSize = "16px";
+
+    photoPriceInput.setAttribute(
+        "aria-label",
+        `Price for photo ${productCard.selectedFiles.length}`
+    );
+
+    photoPriceInput.value = file.photoPrice ?? "";
+
+    photoPriceInput.addEventListener("input", () => {
+        file.photoPrice = photoPriceInput.value.trim();
+    });
+
+    photoPriceLabel.appendChild(photoPriceInput);
 
     removeButton.addEventListener("click", () => {
         const index =
@@ -524,7 +579,6 @@ function addImagePreview(
         }
 
         URL.revokeObjectURL(objectUrl);
-
         preview.remove();
 
         refreshImageNumbers(productCard);
@@ -534,6 +588,7 @@ function addImagePreview(
     preview.appendChild(removeButton);
     preview.appendChild(imageNumber);
     preview.appendChild(imageSize);
+    preview.appendChild(photoPriceLabel);
 
     previewGrid.appendChild(preview);
 }
@@ -547,11 +602,20 @@ function refreshImageNumbers(productCard) {
         productCard.querySelectorAll(".image-preview");
 
     previews.forEach((preview, index) => {
-        const number =
-            preview.querySelector(".image-number");
+        const number = preview.querySelector(".image-number");
 
         if (number) {
             number.textContent = index + 1;
+        }
+
+        const priceInput =
+            preview.querySelector(".photo-price-input");
+
+        if (priceInput) {
+            priceInput.setAttribute(
+                "aria-label",
+                `Price for photo ${index + 1}`
+            );
         }
     });
 }
@@ -571,6 +635,7 @@ function formatFileSize(bytes) {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
 // --------------------------------------------------
 // RENUMBER PRODUCTS
 // --------------------------------------------------
@@ -588,8 +653,7 @@ function renumberProducts() {
             card.querySelector(".product-number");
 
         if (productNumber) {
-            productNumber.textContent =
-                `Product ${number}`;
+            productNumber.textContent = `Product ${number}`;
         }
     });
 
@@ -627,7 +691,6 @@ submitAllButton.addEventListener("click", async () => {
             "Please add at least one product.",
             "error"
         );
-
         return;
     }
 
@@ -652,18 +715,18 @@ submitAllButton.addEventListener("click", async () => {
         const description =
             card.querySelector(".product-description").value.trim();
 
-        const images =
-            card.selectedFiles || [];
-
         if (
             !title ||
             !category ||
-            !price ||
+            price === "" ||
             !condition ||
             !location ||
-            !description ||
-            images.length === 0
+            !description
         ) {
+            valid = false;
+        }
+
+        if (!card.selectedFiles || card.selectedFiles.length === 0) {
             valid = false;
         }
     });
@@ -673,7 +736,6 @@ submitAllButton.addEventListener("click", async () => {
             "Please complete all required fields and add at least one photo to each product.",
             "error"
         );
-
         return;
     }
 
@@ -705,10 +767,9 @@ submitAllButton.addEventListener("click", async () => {
             const category =
                 card.querySelector(".product-category").value;
 
-            const price =
-                Number(
-                    card.querySelector(".product-price").value
-                );
+            const price = Number(
+                card.querySelector(".product-price").value
+            );
 
             const condition =
                 card.querySelector(".product-condition").value;
@@ -719,8 +780,7 @@ submitAllButton.addEventListener("click", async () => {
             const description =
                 card.querySelector(".product-description").value.trim();
 
-            const images =
-                card.selectedFiles || [];
+            const images = card.selectedFiles || [];
 
             // --------------------------------------
             // UPLOAD PRODUCT IMAGES
@@ -735,8 +795,7 @@ submitAllButton.addEventListener("click", async () => {
                     Uploading ${uploadedCount + 1}/${totalImages}...
                 `;
 
-                const result =
-                    await uploadToCloudinary(image);
+                const result = await uploadToCloudinary(image);
 
                 console.log(
                     "Cloudinary upload successful:",
@@ -751,7 +810,13 @@ submitAllButton.addEventListener("click", async () => {
                     width: result.width,
                     height: result.height,
                     bytes: result.bytes,
-                    format: result.format
+                    format: result.format,
+
+                    price:
+                        image.photoPrice !== undefined &&
+                        image.photoPrice !== ""
+                            ? Number(image.photoPrice)
+                            : null
                 });
 
                 uploadedCount++;
@@ -772,8 +837,15 @@ submitAllButton.addEventListener("click", async () => {
                 category: category,
                 price: price,
                 description: description,
+
                 imageUrls: imageUrls,
                 imageDetails: imageDetails,
+
+                // Same index as imageUrls; null means no photo-specific price.
+                imagePrices: imageDetails.map(
+                    (image) => image.price
+                ),
+
                 productCondition: condition,
                 location: location,
                 status: "pending",
@@ -784,11 +856,10 @@ submitAllButton.addEventListener("click", async () => {
                 updatedAt: serverTimestamp()
             };
 
-            const productRef =
-                await addDoc(
-                    collection(db, "products"),
-                    productData
-                );
+            const productRef = await addDoc(
+                collection(db, "products"),
+                productData
+            );
 
             console.log(
                 "Product saved successfully:",
@@ -809,9 +880,7 @@ submitAllButton.addEventListener("click", async () => {
 
         // Clear submitted products
         productsList.innerHTML = "";
-
         productCount = 0;
-
         createProductForm();
 
     } catch (error) {
@@ -842,7 +911,6 @@ submitAllButton.addEventListener("click", async () => {
 
 function showSellMessage(message, type) {
     sellMessage.textContent = message;
-
     sellMessage.className = `sell-message ${type}`;
 
     window.scrollTo({
@@ -854,5 +922,3 @@ function showSellMessage(message, type) {
 // ========================================
 // INITIAL PRODUCT FORM
 // ========================================
-
-createProductForm();
