@@ -70,6 +70,10 @@ const contactSellerButton =
 const orderMessage =
     document.getElementById("order-message");
 
+// --------------------------------------------------
+// STATE
+// --------------------------------------------------
+
 let currentProduct = null;
 let currentUser = null;
 let isModerator = false;
@@ -86,7 +90,7 @@ const productId =
     urlParams.get("id");
 
 // --------------------------------------------------
-// SHOW ERROR
+// SHOW PRODUCT ERROR
 // --------------------------------------------------
 
 function showProductError() {
@@ -102,6 +106,10 @@ function showProductError() {
 function formatPrice(price) {
     return `TZS ${Number(price).toLocaleString()}`;
 }
+
+// --------------------------------------------------
+// UPDATE ORDER TOTAL
+// --------------------------------------------------
 
 function updateOrderTotal() {
     if (!currentProduct) return;
@@ -123,24 +131,28 @@ function updateOrderTotal() {
     );
 }
 
+// --------------------------------------------------
+// SHOW ORDER MESSAGE
+// --------------------------------------------------
+
 function showOrderMessage(message, type = "info") {
     orderMessage.textContent = message;
     orderMessage.className = `order-message order-message-${type}`;
 }
+
+// --------------------------------------------------
+// NORMALIZE TANZANIAN PHONE NUMBER
+// --------------------------------------------------
 
 function normalizeTanzanianPhone(phone) {
     let digits = String(phone || "").replace(/\D/g, "");
 
     if (digits.startsWith("0")) {
         digits = "255" + digits.slice(1);
-    } else if (digits.startsWith("255")) {
-        // Already has Tanzania's country code.
-    } else {
+    } else if (!digits.startsWith("255")) {
         return null;
     }
 
-    // Accept standard Tanzanian mobile numbers:
-    // 255 followed by 9 digits.
     if (!/^255\d{9}$/.test(digits)) {
         return null;
     }
@@ -148,8 +160,8 @@ function normalizeTanzanianPhone(phone) {
     return digits;
 }
 
-// --------------------------------------------------
-// CONTACT SELLER
+ // --------------------------------------------------
+// CONTACT SELLER THROUGH WHATSAPP
 // --------------------------------------------------
 
 async function contactSeller() {
@@ -169,7 +181,6 @@ async function contactSeller() {
         return;
     }
 
-    // Open a tab immediately to avoid popup blockers.
     const whatsappWindow = window.open("about:blank", "_blank");
 
     if (!whatsappWindow) {
@@ -184,8 +195,6 @@ async function contactSeller() {
     contactSellerButton.disabled = true;
 
     try {
-        // Public contact information is stored separately
-        // from the seller's private user profile.
         const contactSnapshot = await getDoc(
             doc(db, "sellerContacts", currentProduct.sellerId)
         );
@@ -205,88 +214,13 @@ async function contactSeller() {
             );
         }
 
-        const message = `Hello, I am interested in your product: ${
-            currentProduct.title || "a product"
-        }`;
+        const message =
+            `Hello, I am interested in your product: ${
+                currentProduct.title || "a product"
+            } on ARU Marketplace.`;
 
         whatsappWindow.location.href =
             `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-    } catch (error) {
-        whatsappWindow.close();
-
-        showOrderMessage(
-            error.message ||
-                "Could not open the seller's WhatsApp contact.",
-            "error"
-        );
-
-    } finally {
-        contactSellerButton.disabled = false;
-    }
-}
-
-async function contactSeller() {
-    if (!currentUser || !currentProduct) {
-        showOrderMessage(
-            "Please wait until the product has loaded.",
-            "error"
-        );
-        return;
-    }
-
-    if (currentProduct.sellerId === currentUser.uid) {
-        showOrderMessage(
-            "This is your own product listing.",
-            "error"
-        );
-        return;
-    }
-
-    // Open a tab immediately to avoid popup blockers.
-    const whatsappWindow = window.open("about:blank", "_blank");
-
-    if (!whatsappWindow) {
-        showOrderMessage(
-            "Please allow pop-ups to open WhatsApp.",
-            "error"
-        );
-        return;
-    }
-
-    whatsappWindow.opener = null;
-    contactSellerButton.disabled = true;
-
-    try {
-        // Public contact information is stored separately
-        // from the seller's private user profile.
-        const contactSnapshot = await getDoc(
-            doc(db, "sellerContacts", currentProduct.sellerId)
-        );
-
-        if (!contactSnapshot.exists()) {
-            throw new Error(
-                "This seller has not added a WhatsApp contact yet."
-            );
-        }
-
-        const contact = contactSnapshot.data();
-        const phone = normalizeTanzanianPhone(contact.whatsapp);
-
-        if (!phone) {
-            throw new Error(
-                "The seller's WhatsApp number is missing or invalid."
-            );
-        }
-
-        const message = `Hello, I am interested in your product: ${
-            currentProduct.title || "a product"
-        } on ARU Marketplace.`;
-
-        const whatsappUrl =
-            `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-
-        whatsappWindow.location.href = whatsappUrl;
 
         showOrderMessage(
             "Opening WhatsApp to contact the seller...",
@@ -295,6 +229,7 @@ async function contactSeller() {
 
     } catch (error) {
         whatsappWindow.close();
+
         console.error("Contact seller failed:", error);
 
         showOrderMessage(
@@ -306,6 +241,10 @@ async function contactSeller() {
         contactSellerButton.disabled = false;
     }
 }
+
+// --------------------------------------------------
+// PLACE ORDER
+// --------------------------------------------------
 
 async function placeOrder() {
     if (!currentUser || !currentProduct || orderInProgress) {
@@ -363,15 +302,14 @@ async function placeOrder() {
         '<i class="bi bi-arrow-repeat"></i> Placing Order...';
 
     try {
-        // Recheck that the product is still active and unchanged.
         const productRef = doc(db, "products", productId);
-        const latestProductSnapshot = await getDoc(productRef);
+        const latestSnapshot = await getDoc(productRef);
 
-        if (!latestProductSnapshot.exists()) {
+        if (!latestSnapshot.exists()) {
             throw new Error("This product is no longer available.");
         }
 
-        const latestProduct = latestProductSnapshot.data();
+        const latestProduct = latestSnapshot.data();
 
         if (
             latestProduct.status !== "active" ||
@@ -388,15 +326,13 @@ async function placeOrder() {
         }
 
         const imageUrls = latestProduct.imageUrls || [];
-        const productImage =
-            imageUrls.length > 0 ? imageUrls[0] : "";
 
         await addDoc(collection(db, "orders"), {
             buyerId: currentUser.uid,
             sellerId: latestProduct.sellerId,
             productId: productId,
             productTitle: latestProduct.title || "Product",
-            productImage: productImage,
+            productImage: imageUrls[0] || "",
             unitPrice: unitPrice,
             quantity: quantity,
             totalPrice: unitPrice * quantity,
@@ -413,16 +349,14 @@ async function placeOrder() {
         placeOrderButton.innerHTML =
             '<i class="bi bi-check-circle"></i> Order Placed';
 
-        // Prevent accidental duplicate orders from repeated clicks.
         placeOrderButton.disabled = true;
 
     } catch (error) {
         console.error("Failed to place order:", error);
 
         showOrderMessage(
-            error.message === "Missing or insufficient permissions."
-                ? "Firebase denied this order. Check the Orders security rules."
-                : error.message || "Unable to place your order. Please try again.",
+            error.message ||
+                "Unable to place your order. Please try again.",
             "error"
         );
 
@@ -435,6 +369,10 @@ async function placeOrder() {
         orderInProgress = false;
     }
 }
+
+// --------------------------------------------------
+// QUANTITY CONTROLS
+// --------------------------------------------------
 
 decreaseQuantityButton.addEventListener("click", () => {
     const quantity = Number.parseInt(quantityInput.value, 10) || 1;
@@ -456,7 +394,7 @@ placeOrderButton.addEventListener("click", placeOrder);
 contactSellerButton.addEventListener("click", contactSeller);
 
 // --------------------------------------------------
-// DISPLAY PRODUCT IMAGES
+// DISPLAY PRODUCT IMAGES AND PHOTO PRICES
 // --------------------------------------------------
 
 function displayProductImages(
@@ -476,7 +414,7 @@ function displayProductImages(
         return;
     }
 
-    const getPhotoPrice = (index) => {
+    function getPhotoPrice(index) {
         const value =
             imagePrices?.[index] ?? imageDetails?.[index]?.price;
 
@@ -489,39 +427,39 @@ function displayProductImages(
         return Number.isFinite(numericPrice) && numericPrice >= 0
             ? numericPrice
             : null;
-    };
+    }
 
-    const showMainImage = (index) => {
+    function showMainImage(index) {
         const photoPrice = getPhotoPrice(index);
 
-        mainImage.innerHTML = `
-            <img
-                src="${imageUrls[index]}"
-                alt="Product image ${index + 1}"
-                id="selected-product-image"
-            >
-            ${photoPrice !== null
-                ? `<div class="product-photo-price">${formatPrice(photoPrice)}</div>`
-                : ""}
-        `;
+        const image = document.createElement("img");
+        image.src = imageUrls[index];
+        image.alt = `Product image ${index + 1}`;
+        image.id = "selected-product-image";
 
-        const displayedPrice =
-            mainImage.querySelector(".product-photo-price");
+        mainImage.replaceChildren(image);
 
-        if (displayedPrice) {
-            displayedPrice.style.marginTop = "10px";
-            displayedPrice.style.fontSize = "18px";
-            displayedPrice.style.fontWeight = "700";
-            displayedPrice.style.textAlign = "center";
-            displayedPrice.style.color = "#166534";
+        if (photoPrice !== null) {
+            const priceLabel = document.createElement("div");
+            priceLabel.className = "product-photo-price";
+            priceLabel.textContent = formatPrice(photoPrice);
+
+            priceLabel.style.marginTop = "10px";
+            priceLabel.style.fontSize = "18px";
+            priceLabel.style.fontWeight = "700";
+            priceLabel.style.textAlign = "center";
+            priceLabel.style.color = "#166534";
+
+            mainImage.appendChild(priceLabel);
         }
-    };
+    }
 
     showMainImage(0);
     thumbnails.innerHTML = "";
 
     imageUrls.forEach((imageUrl, index) => {
         const thumbnail = document.createElement("button");
+
         thumbnail.type = "button";
         thumbnail.className = "product-thumbnail";
 
@@ -539,8 +477,10 @@ function displayProductImages(
 
         if (photoPrice !== null) {
             const priceLabel = document.createElement("span");
+
             priceLabel.className = "product-thumbnail-price";
             priceLabel.textContent = formatPrice(photoPrice);
+
             priceLabel.style.display = "block";
             priceLabel.style.marginTop = "6px";
             priceLabel.style.fontSize = "12px";
@@ -566,7 +506,7 @@ function displayProductImages(
     });
 }
 
-// --------------------------------------------------
+ // --------------------------------------------------
 // LOAD PRODUCT
 // --------------------------------------------------
 
@@ -577,12 +517,7 @@ async function loadProduct() {
     }
 
     try {
-        const productRef = doc(
-            db,
-            "products",
-            productId
-        );
-
+        const productRef = doc(db, "products", productId);
         const productSnapshot = await getDoc(productRef);
 
         if (!productSnapshot.exists()) {
@@ -593,17 +528,8 @@ async function loadProduct() {
         const product = productSnapshot.data();
 
         currentProduct = product;
-        updateOrderTotal();
 
-        placeOrderButton.disabled = false;
-
-        placeOrderButton.innerHTML =
-            '<i class="bi bi-bag-check"></i> Place Order';
-
-        // ------------------------------------------
-        // CHECK PRODUCT STATUS
-        // ------------------------------------------
-
+        // Only display approved and active products.
         if (product.status !== "active") {
             showProductError();
             return;
@@ -632,7 +558,7 @@ async function loadProduct() {
             product.description || "No description available.";
 
         // ------------------------------------------
-        // PRODUCT IMAGES
+        // PRODUCT IMAGES AND INDIVIDUAL PRICES
         // ------------------------------------------
 
         displayProductImages(
@@ -641,19 +567,18 @@ async function loadProduct() {
             product.imagePrices || []
         );
 
+        updateOrderTotal();
+
         // ------------------------------------------
         // SHOW PRODUCT
         // ------------------------------------------
 
         loadingMessage.style.display = "none";
+        errorMessage.style.display = "none";
         productContent.style.display = "grid";
 
     } catch (error) {
-        console.error(
-            "Failed to load product:",
-            error
-        );
-
+        console.error("Failed to load product:", error);
         showProductError();
     }
 }
