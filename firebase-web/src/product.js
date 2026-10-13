@@ -306,3 +306,392 @@ async function contactSeller() {
         contactSellerButton.disabled = false;
     }
 }
+
+async function placeOrder() {
+    if (!currentUser || !currentProduct || orderInProgress) {
+        return;
+    }
+
+    if (isModerator) {
+        showOrderMessage(
+            "Moderator accounts cannot place orders.",
+            "error"
+        );
+        return;
+    }
+
+    if (currentProduct.status !== "active") {
+        showOrderMessage(
+            "This product is no longer available.",
+            "error"
+        );
+        return;
+    }
+
+    if (currentProduct.sellerId === currentUser.uid) {
+        showOrderMessage(
+            "You cannot place an order for your own product.",
+            "error"
+        );
+        return;
+    }
+
+    const quantity = Number.parseInt(quantityInput.value, 10);
+    const unitPrice = Number(currentProduct.price);
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        showOrderMessage("Please enter a valid quantity.", "error");
+        return;
+    }
+
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+        showOrderMessage("This product has an invalid price.", "error");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Place an order for ${quantity} item(s) for ` +
+        `${formatPrice(unitPrice * quantity)}?`
+    );
+
+    if (!confirmed) return;
+
+    orderInProgress = true;
+    placeOrderButton.disabled = true;
+
+    placeOrderButton.innerHTML =
+        '<i class="bi bi-arrow-repeat"></i> Placing Order...';
+
+    try {
+        // Recheck that the product is still active and unchanged.
+        const productRef = doc(db, "products", productId);
+        const latestProductSnapshot = await getDoc(productRef);
+
+        if (!latestProductSnapshot.exists()) {
+            throw new Error("This product is no longer available.");
+        }
+
+        const latestProduct = latestProductSnapshot.data();
+
+        if (
+            latestProduct.status !== "active" ||
+            latestProduct.sellerId !== currentProduct.sellerId ||
+            Number(latestProduct.price) !== unitPrice
+        ) {
+            throw new Error(
+                "This product has changed. Refresh the page and try again."
+            );
+        }
+
+        if (latestProduct.sellerId === currentUser.uid) {
+            throw new Error("You cannot order your own product.");
+        }
+
+        const imageUrls = latestProduct.imageUrls || [];
+        const productImage =
+            imageUrls.length > 0 ? imageUrls[0] : "";
+
+        await addDoc(collection(db, "orders"), {
+            buyerId: currentUser.uid,
+            sellerId: latestProduct.sellerId,
+            productId: productId,
+            productTitle: latestProduct.title || "Product",
+            productImage: productImage,
+            unitPrice: unitPrice,
+            quantity: quantity,
+            totalPrice: unitPrice * quantity,
+            status: "pending",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+
+        showOrderMessage(
+            "Order placed successfully! You can track it in Orders.",
+            "success"
+        );
+
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-check-circle"></i> Order Placed';
+
+        // Prevent accidental duplicate orders from repeated clicks.
+        placeOrderButton.disabled = true;
+
+    } catch (error) {
+        console.error("Failed to place order:", error);
+
+        showOrderMessage(
+            error.message === "Missing or insufficient permissions."
+                ? "Firebase denied this order. Check the Orders security rules."
+                : error.message || "Unable to place your order. Please try again.",
+            "error"
+        );
+
+        placeOrderButton.disabled = false;
+
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-bag-check"></i> Place Order';
+
+    } finally {
+        orderInProgress = false;
+    }
+}
+
+decreaseQuantityButton.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+
+    quantityInput.value = String(Math.max(1, quantity - 1));
+    updateOrderTotal();
+});
+
+increaseQuantityButton.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+
+    quantityInput.value = String(Math.min(99, quantity + 1));
+    updateOrderTotal();
+});
+
+quantityInput.addEventListener("input", updateOrderTotal);
+
+placeOrderButton.addEventListener("click", placeOrder);
+contactSellerButton.addEventListener("click", contactSeller);
+
+// --------------------------------------------------
+// DISPLAY PRODUCT IMAGES
+// --------------------------------------------------
+
+function displayProductImages(
+    imageUrls,
+    imageDetails = [],
+    imagePrices = []
+) {
+    if (!imageUrls || imageUrls.length === 0) {
+        mainImage.innerHTML = `
+            <div class="no-product-image">
+                <i class="bi bi-image"></i>
+                <span>No Image</span>
+            </div>
+        `;
+
+        thumbnails.innerHTML = "";
+        return;
+    }
+
+    const getPhotoPrice = (index) => {
+        const value =
+            imagePrices?.[index] ?? imageDetails?.[index]?.price;
+
+        if (value === null || value === undefined || value === "") {
+            return null;
+        }
+
+        const numericPrice = Number(value);
+
+        return Number.isFinite(numericPrice) && numericPrice >= 0
+            ? numericPrice
+            : null;
+    };
+
+    const showMainImage = (index) => {
+        const photoPrice = getPhotoPrice(index);
+
+        mainImage.innerHTML = `
+            <img
+                src="${imageUrls[index]}"
+                alt="Product image ${index + 1}"
+                id="selected-product-image"
+            >
+            ${photoPrice !== null
+                ? `<div class="product-photo-price">${formatPrice(photoPrice)}</div>`
+                : ""}
+        `;
+
+        const displayedPrice =
+            mainImage.querySelector(".product-photo-price");
+
+        if (displayedPrice) {
+            displayedPrice.style.marginTop = "10px";
+            displayedPrice.style.fontSize = "18px";
+            displayedPrice.style.fontWeight = "700";
+            displayedPrice.style.textAlign = "center";
+            displayedPrice.style.color = "#166534";
+        }
+    };
+
+    showMainImage(0);
+    thumbnails.innerHTML = "";
+
+    imageUrls.forEach((imageUrl, index) => {
+        const thumbnail = document.createElement("button");
+        thumbnail.type = "button";
+        thumbnail.className = "product-thumbnail";
+
+        if (index === 0) {
+            thumbnail.classList.add("active");
+        }
+
+        const thumbnailImage = document.createElement("img");
+        thumbnailImage.src = imageUrl;
+        thumbnailImage.alt = `Product photo ${index + 1}`;
+
+        thumbnail.appendChild(thumbnailImage);
+
+        const photoPrice = getPhotoPrice(index);
+
+        if (photoPrice !== null) {
+            const priceLabel = document.createElement("span");
+            priceLabel.className = "product-thumbnail-price";
+            priceLabel.textContent = formatPrice(photoPrice);
+            priceLabel.style.display = "block";
+            priceLabel.style.marginTop = "6px";
+            priceLabel.style.fontSize = "12px";
+            priceLabel.style.fontWeight = "700";
+            priceLabel.style.textAlign = "center";
+
+            thumbnail.appendChild(priceLabel);
+        }
+
+        thumbnail.addEventListener("click", () => {
+            showMainImage(index);
+
+            thumbnails
+                .querySelectorAll(".product-thumbnail")
+                .forEach((item) => {
+                    item.classList.remove("active");
+                });
+
+            thumbnail.classList.add("active");
+        });
+
+        thumbnails.appendChild(thumbnail);
+    });
+}
+
+// --------------------------------------------------
+// LOAD PRODUCT
+// --------------------------------------------------
+
+async function loadProduct() {
+    if (!productId) {
+        showProductError();
+        return;
+    }
+
+    try {
+        const productRef = doc(
+            db,
+            "products",
+            productId
+        );
+
+        const productSnapshot = await getDoc(productRef);
+
+        if (!productSnapshot.exists()) {
+            showProductError();
+            return;
+        }
+
+        const product = productSnapshot.data();
+
+        currentProduct = product;
+        updateOrderTotal();
+
+        placeOrderButton.disabled = false;
+
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-bag-check"></i> Place Order';
+
+        // ------------------------------------------
+        // CHECK PRODUCT STATUS
+        // ------------------------------------------
+
+        if (product.status !== "active") {
+            showProductError();
+            return;
+        }
+
+        // ------------------------------------------
+        // PRODUCT INFORMATION
+        // ------------------------------------------
+
+        productTitle.textContent =
+            product.title || "Untitled Product";
+
+        productPrice.textContent =
+            formatPrice(product.price);
+
+        productCategory.textContent =
+            product.category || "Other";
+
+        productCondition.textContent =
+            product.productCondition || "Not specified";
+
+        productLocation.textContent =
+            product.location || "Not specified";
+
+        productDescription.textContent =
+            product.description || "No description available.";
+
+        // ------------------------------------------
+        // PRODUCT IMAGES
+        // ------------------------------------------
+
+        displayProductImages(
+            product.imageUrls || [],
+            product.imageDetails || [],
+            product.imagePrices || []
+        );
+
+        // ------------------------------------------
+        // SHOW PRODUCT
+        // ------------------------------------------
+
+        loadingMessage.style.display = "none";
+        productContent.style.display = "grid";
+
+    } catch (error) {
+        console.error(
+            "Failed to load product:",
+            error
+        );
+
+        showProductError();
+    }
+}
+
+// --------------------------------------------------
+// AUTHENTICATION
+// --------------------------------------------------
+
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        window.location.replace("/login.html");
+        return;
+    }
+
+    currentUser = user;
+
+    try {
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
+
+        isModerator =
+            adminSnapshot.exists() &&
+            adminSnapshot.data().role === "ADMIN";
+
+        if (isModerator) {
+            placeOrderButton.disabled = true;
+
+            showOrderMessage(
+                "Moderator accounts cannot place orders.",
+                "error"
+            );
+        }
+
+        await loadProduct();
+
+    } catch (error) {
+        console.error("Account check failed:", error);
+        showProductError();
+    }
+});
