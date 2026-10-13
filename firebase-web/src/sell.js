@@ -274,7 +274,6 @@ async function optimizeImage(file) {
     let width = image.width;
     let height = image.height;
 
-    // Resize while keeping the original aspect ratio
     if (
         width > MAX_IMAGE_DIMENSION ||
         height > MAX_IMAGE_DIMENSION
@@ -293,14 +292,7 @@ async function optimizeImage(file) {
     canvas.height = height;
 
     const context = canvas.getContext("2d");
-
-    context.drawImage(
-        image,
-        0,
-        0,
-        width,
-        height
-    );
+    context.drawImage(image, 0, 0, width, height);
 
     let quality = JPEG_QUALITY;
 
@@ -310,8 +302,6 @@ async function optimizeImage(file) {
         quality
     );
 
-    // Try to keep the output close to 500 KB.
-    // Gradually reduce quality if necessary.
     while (
         blob.size > MAX_OUTPUT_FILE_SIZE &&
         quality > 0.5
@@ -325,8 +315,6 @@ async function optimizeImage(file) {
         );
     }
 
-    // If the image is still too large,
-    // reduce its dimensions and compress again.
     while (
         blob.size > MAX_OUTPUT_FILE_SIZE &&
         width > 800
@@ -337,13 +325,7 @@ async function optimizeImage(file) {
         canvas.width = width;
         canvas.height = height;
 
-        context.drawImage(
-            image,
-            0,
-            0,
-            width,
-            height
-        );
+        context.drawImage(image, 0, 0, width, height);
 
         quality = 0.75;
 
@@ -364,46 +346,7 @@ async function optimizeImage(file) {
     );
 }
 
-// --------------------------------------------------
-// UPLOAD IMAGE TO CLOUDINARY
-// --------------------------------------------------
-
-async function uploadToCloudinary(file) {
-    const formData = new FormData();
-
-    formData.append("file", file);
-    formData.append(
-        "upload_preset",
-        CLOUDINARY_UPLOAD_PRESET
-    );
-
-    const response = await fetch(
-        CLOUDINARY_UPLOAD_URL,
-        {
-            method: "POST",
-            body: formData
-        }
-    );
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-
-        throw new Error(
-            errorData.error?.message ||
-            "Image upload failed. Please try again."
-        );
-    }
-
-    const data = await response.json();
-
-    if (!data.secure_url) {
-        throw new Error("Cloudinary did not return an image URL.");
-    }
-
-    return data.secure_url;
-}
-
-// --------------------------------------------------
+ // --------------------------------------------------
 // LOAD IMAGE
 // --------------------------------------------------
 
@@ -453,10 +396,15 @@ function canvasToBlob(canvas, type, quality) {
 function createOptimizedFileName(originalName) {
     const baseName = originalName
         .replace(/\.[^/.]+$/, "")
-        .replace(/[^a-zA-Z0-9_-]/g, "_");
+        .replace(/[^a-zA-Z0-9_-]/g, "-")
+        .toLowerCase();
 
-    return `${baseName}_${Date.now()}.jpg`;
+    return `${baseName}-${Date.now()}.jpg`;
 }
+
+// --------------------------------------------------
+// UPLOAD IMAGE TO CLOUDINARY
+// --------------------------------------------------
 
 async function uploadToCloudinary(file) {
     const formData = new FormData();
@@ -496,14 +444,9 @@ async function uploadToCloudinary(file) {
     };
 }
 
-function createOptimizedFileName(originalName) {
-    const baseName = originalName
-        .replace(/\.[^/.]+$/, "")
-        .replace(/[^a-zA-Z0-9-_]/g, "-")
-        .toLowerCase();
-
-    return `${baseName}-optimized.jpg`;
-}
+// --------------------------------------------------
+// IMAGE PREVIEW WITH OPTIONAL PHOTO PRICE
+// --------------------------------------------------
 
 function addImagePreview(productCard, file, previewGrid) {
     const preview = document.createElement("div");
@@ -518,14 +461,11 @@ function addImagePreview(productCard, file, previewGrid) {
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "remove-image-button";
-    removeButton.innerHTML = `
-        <i class="bi bi-x"></i>
-    `;
+    removeButton.innerHTML = `<i class="bi bi-x"></i>`;
 
     const imageNumber = document.createElement("span");
     imageNumber.className = "image-number";
-    imageNumber.textContent =
-        `${productCard.selectedFiles.length}`;
+    imageNumber.textContent = productCard.selectedFiles.length;
 
     const imageSize = document.createElement("span");
     imageSize.className = "image-size";
@@ -571,8 +511,7 @@ function addImagePreview(productCard, file, previewGrid) {
     photoPriceLabel.appendChild(photoPriceInput);
 
     removeButton.addEventListener("click", () => {
-        const index =
-            productCard.selectedFiles.indexOf(file);
+        const index = productCard.selectedFiles.indexOf(file);
 
         if (index !== -1) {
             productCard.selectedFiles.splice(index, 1);
@@ -636,7 +575,7 @@ function formatFileSize(bytes) {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-// --------------------------------------------------
+ // --------------------------------------------------
 // RENUMBER PRODUCTS
 // --------------------------------------------------
 
@@ -726,7 +665,10 @@ submitAllButton.addEventListener("click", async () => {
             valid = false;
         }
 
-        if (!card.selectedFiles || card.selectedFiles.length === 0) {
+        if (
+            !card.selectedFiles ||
+            card.selectedFiles.length === 0
+        ) {
             valid = false;
         }
     });
@@ -737,6 +679,30 @@ submitAllButton.addEventListener("click", async () => {
             "error"
         );
         return;
+    }
+
+    // Validate optional individual photo prices.
+    for (const card of cards) {
+        const inputs =
+            card.querySelectorAll(".photo-price-input");
+
+        for (const input of inputs) {
+            if (input.value.trim() === "") {
+                continue;
+            }
+
+            const value = Number(input.value);
+
+            if (!Number.isFinite(value) || value < 0) {
+                showSellMessage(
+                    "Each photo price must be a valid non-negative number.",
+                    "error"
+                );
+
+                input.focus();
+                return;
+            }
+        }
     }
 
     submitAllButton.disabled = true;
@@ -841,7 +807,8 @@ submitAllButton.addEventListener("click", async () => {
                 imageUrls: imageUrls,
                 imageDetails: imageDetails,
 
-                // Same index as imageUrls; null means no photo-specific price.
+                // Individual photo prices correspond to imageUrls.
+                // null means the seller did not enter a price.
                 imagePrices: imageDetails.map(
                     (image) => image.price
                 ),
@@ -891,7 +858,7 @@ submitAllButton.addEventListener("click", async () => {
 
         showSellMessage(
             error.message ||
-            "Something went wrong while submitting your products.",
+                "Something went wrong while submitting your products.",
             "error"
         );
 
