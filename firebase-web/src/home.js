@@ -350,7 +350,7 @@ if (categoriesToggle && categoryMenu) {
 
 // ========================================
 // CATEGORY SELECTION
-// ========================================
+
 
 function selectCategory(category) {
     selectedCategory = normalizeCategory(category);
