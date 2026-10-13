@@ -888,4 +888,4 @@ function showSellMessage(message, type) {
 
 // ========================================
 // INITIAL PRODUCT FORM
-// ========================================
+
