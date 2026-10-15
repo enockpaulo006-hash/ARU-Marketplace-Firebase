@@ -211,7 +211,7 @@ function renderProducts() {
 
     productsContainer.innerHTML = "";
 
-    filteredProducts.forEach((product) => {
+    filteredProducts.forEach((product, productIndex) => {
         const productCard = document.createElement("div");
         productCard.className = "product-card";
 
@@ -227,11 +227,44 @@ function renderProducts() {
         const location = product.location || "Location not specified";
         const category = product.category || "Other";
 
+
+        const imageWrapper = document.createElement("div");
+        imageWrapper.className = "product-image-wrapper";
+
+        const imagePlaceholder = document.createElement("div");
+        imagePlaceholder.className = "product-image-placeholder";
+        imagePlaceholder.innerHTML = `
+            <span class="image-loading-spinner"></span>
+            <span>Loading image...</span>
+        `;
+
         const image = document.createElement("img");
-        image.src = imageUrl;
         image.alt = title;
-        image.className = "product-image";
-        image.loading = "lazy";
+        image.className = "product-image product-image-loading";
+        image.decoding = "async";
+
+        // Prioritize the first visible product images.
+        image.loading = productIndex < 2 ? "eager" : "lazy";
+        image.fetchPriority = productIndex === 0 ? "high" : "auto";
+
+        image.addEventListener("load", () => {
+            imagePlaceholder.remove();
+            image.classList.remove("product-image-loading");
+            image.classList.add("product-image-loaded");
+        }, { once: true });
+
+        image.addEventListener("error", () => {
+            imagePlaceholder.className = "product-image-placeholder";
+            imagePlaceholder.innerHTML = `
+                <i class="bi bi-image"></i>
+                <span>Image unavailable</span>
+            `;
+            image.remove();
+        }, { once: true });
+
+        imageWrapper.append(imagePlaceholder, image);
+        image.src = imageUrl;
+
 
         const content = document.createElement("div");
         content.className = "product-card-content";
@@ -272,7 +305,7 @@ function renderProducts() {
             viewButton
         );
 
-        productCard.append(image, content);
+        productCard.append(imageWrapper, content);
         productsContainer.appendChild(productCard);
     });
 }
