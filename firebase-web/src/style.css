@@ -4134,3 +4134,34 @@ body:has(.profile-page) .page-header p {
     width: 100%;
     margin-top: auto;
 }
+
+/* Only adjust the main product image and its photo price */
+#product-main-image {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+#product-main-image #selected-product-image {
+    width: calc(100% - 100px);
+    max-width: calc(100% - 100px);
+    height: auto;
+    min-width: 0;
+    object-fit: contain;
+}
+
+#product-main-image .product-photo-price {
+    flex: 0 0 92px;
+    width: 92px;
+    max-width: 92px;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 4px;
+    font-size: 15px;
+    line-height: 1.4;
+    text-align: center;
+    overflow-wrap: anywhere;
+    color: #166534;
+}
