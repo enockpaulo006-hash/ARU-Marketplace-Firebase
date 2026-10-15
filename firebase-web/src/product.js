@@ -472,18 +472,16 @@ function displayProductImages(
         mainImage.appendChild(image);
         image.src = imageUrls[index];
 
+
         if (photoPrice !== null) {
             const priceLabel = document.createElement("div");
+
             priceLabel.className = "product-photo-price";
             priceLabel.textContent = formatPrice(photoPrice);
-            priceLabel.style.marginTop = "10px";
-            priceLabel.style.fontSize = "18px";
-            priceLabel.style.fontWeight = "700";
-            priceLabel.style.textAlign = "center";
-            priceLabel.style.color = "#166534";
 
             mainImage.appendChild(priceLabel);
         }
+
     }
 
     // Display the first product image immediately.
