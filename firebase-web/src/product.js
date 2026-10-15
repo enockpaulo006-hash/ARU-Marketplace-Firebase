@@ -397,6 +397,7 @@ contactSellerButton.addEventListener("click", contactSeller);
 // DISPLAY PRODUCT IMAGES AND PHOTO PRICES
 // --------------------------------------------------
 
+
 function displayProductImages(
     imageUrls,
     imageDetails = [],
@@ -429,21 +430,52 @@ function displayProductImages(
             : null;
     }
 
+    // Show the selected product image with a loading placeholder.
     function showMainImage(index) {
         const photoPrice = getPhotoPrice(index);
 
         const image = document.createElement("img");
-        image.src = imageUrls[index];
         image.alt = `Product image ${index + 1}`;
         image.id = "selected-product-image";
+        image.className = "product-image-loading";
+        image.decoding = "async";
 
-        mainImage.replaceChildren(image);
+        // The main image should start loading immediately.
+        image.loading = "eager";
+        image.fetchPriority = index === 0 ? "high" : "auto";
+
+        const placeholder = document.createElement("div");
+        placeholder.className = "product-image-placeholder";
+        placeholder.innerHTML = `
+            <span class="image-loading-spinner"></span>
+            <span>Loading image...</span>
+        `;
+
+        mainImage.replaceChildren(placeholder);
+
+        image.addEventListener("load", () => {
+            placeholder.remove();
+            image.classList.remove("product-image-loading");
+            image.classList.add("product-image-loaded");
+        }, { once: true });
+
+        image.addEventListener("error", () => {
+            placeholder.className = "no-product-image";
+            placeholder.innerHTML = `
+                <i class="bi bi-image"></i>
+                <span>Image unavailable</span>
+            `;
+            image.remove();
+        }, { once: true });
+
+        // Add the image before setting its source.
+        mainImage.appendChild(image);
+        image.src = imageUrls[index];
 
         if (photoPrice !== null) {
             const priceLabel = document.createElement("div");
             priceLabel.className = "product-photo-price";
             priceLabel.textContent = formatPrice(photoPrice);
-
             priceLabel.style.marginTop = "10px";
             priceLabel.style.fontSize = "18px";
             priceLabel.style.fontWeight = "700";
@@ -454,6 +486,7 @@ function displayProductImages(
         }
     }
 
+    // Display the first product image immediately.
     showMainImage(0);
     thumbnails.innerHTML = "";
 
@@ -468,8 +501,12 @@ function displayProductImages(
         }
 
         const thumbnailImage = document.createElement("img");
-        thumbnailImage.src = imageUrl;
         thumbnailImage.alt = `Product photo ${index + 1}`;
+        thumbnailImage.loading = index === 0 ? "eager" : "lazy";
+        thumbnailImage.decoding = "async";
+
+        // Avoid delaying the main product image for thumbnails.
+        thumbnailImage.src = imageUrl;
 
         thumbnail.appendChild(thumbnailImage);
 
@@ -480,7 +517,6 @@ function displayProductImages(
 
             priceLabel.className = "product-thumbnail-price";
             priceLabel.textContent = formatPrice(photoPrice);
-
             priceLabel.style.display = "block";
             priceLabel.style.marginTop = "6px";
             priceLabel.style.fontSize = "12px";
