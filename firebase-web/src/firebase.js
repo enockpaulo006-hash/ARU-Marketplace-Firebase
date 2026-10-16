@@ -15,7 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-// Firebase Authentication
+// Firebase Authentications
 export const auth = getAuth(app);
 
 // Firestore Database
