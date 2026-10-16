@@ -381,7 +381,6 @@ if (categoriesToggle && categoryMenu) {
     });
 }
 
-// ========================================
 // CATEGORY SELECTION
 
 
