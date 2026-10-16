@@ -874,7 +874,7 @@ submitAllButton.addEventListener("click", async () => {
 
 // --------------------------------------------------
 // MESSAGE
-// --------------------------------------------------
+
 
 function showSellMessage(message, type) {
     sellMessage.textContent = message;
