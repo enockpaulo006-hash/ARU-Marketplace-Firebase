@@ -3937,8 +3937,7 @@ body:has(.profile-page) .page-header p {
     }
 }
 /* ========================================
-   LOGIN PASSWORD VISIBILITY BUTTON
-   ======================================== */
+   LOGIN PASSWORD VISIBILITY BUTTON */
 
 #login-form .password-field {
     position: relative !important;
