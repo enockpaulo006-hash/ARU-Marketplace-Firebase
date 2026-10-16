@@ -249,7 +249,7 @@ form.addEventListener("submit", async (event) => {
             fullName: fullName,
             phoneNumber: phoneNumber,
 
-            // Every new user starts as a buyer
+            // Every new user starts as a buyer firstly. They can apply to become a seller later.
             role: "BUYER",
 
             // Seller approval system
