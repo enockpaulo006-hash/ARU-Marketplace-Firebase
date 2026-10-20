@@ -50,7 +50,7 @@ let orderInProgress = false;
 let selectedImageIndex = 0;
 
 // --------------------------------------------------
-// GET PRODUCT ID
+// PRODUCT ID
 // --------------------------------------------------
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -97,7 +97,27 @@ function showProductContent() {
 }
 
 // --------------------------------------------------
-// IMAGE URL OPTIMIZATION
+// THREE-DOT IMAGE LOADER
+// Uses the shared marketplace-loading animation.
+// --------------------------------------------------
+
+function createImageLoader() {
+    const loader = document.createElement("div");
+    loader.className = "product-image-placeholder";
+    loader.setAttribute("role", "status");
+    loader.setAttribute("aria-label", "Loading image");
+
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "loading-dot";
+        loader.appendChild(dot);
+    }
+
+    return loader;
+}
+
+// --------------------------------------------------
+// CLOUDINARY IMAGE OPTIMIZATION
 // --------------------------------------------------
 
 function getOptimizedImageUrl(url, width = 1000) {
@@ -121,7 +141,7 @@ function getOptimizedImageUrl(url, width = 1000) {
 
         const firstSegment = remainingPath.split("/")[0];
 
-        // Avoid adding transformations to URLs already transformed.
+        // Avoid duplicating transformations already in the URL.
         if (/^(w_|h_|c_|f_auto|q_auto|q_[0-9])/.test(firstSegment)) {
             return url;
         }
@@ -181,11 +201,11 @@ function updateOrderTotal() {
         quantityInput.value = "99";
     }
 
-    const unitPrice = getSelectedPrice();
+    const price = getSelectedPrice();
 
-    totalPriceElement.textContent = unitPrice === null
+    totalPriceElement.textContent = price === null
         ? "Price not available"
-        : formatPrice(unitPrice * quantity);
+        : formatPrice(price * quantity);
 }
 
 // --------------------------------------------------
@@ -216,7 +236,7 @@ function displayProductImages() {
     mainImage.replaceChildren();
     thumbnails.replaceChildren();
 
-    if (!imageUrls.length) {
+    if (imageUrls.length === 0) {
         mainImage.innerHTML = `
             <div class="no-product-image">
                 <i class="bi bi-image"></i>
@@ -227,6 +247,8 @@ function displayProductImages() {
     }
 
     function showMainImage(index) {
+        if (!imageUrls[index]) return;
+
         selectedImageIndex = index;
 
         const image = document.createElement("img");
@@ -237,24 +259,19 @@ function displayProductImages() {
         image.loading = "eager";
         image.fetchPriority = index === 0 ? "high" : "auto";
 
-        const placeholder = document.createElement("div");
-        placeholder.className = "product-image-placeholder";
-        placeholder.innerHTML = `
-            <span class="image-loading-spinner"></span>
-            <span>Loading image...</span>
-        `;
-
-        mainImage.replaceChildren(placeholder);
+        const loader = createImageLoader();
+        mainImage.replaceChildren(loader);
 
         image.addEventListener("load", () => {
-            placeholder.remove();
+            loader.remove();
             image.classList.remove("product-image-loading");
             image.classList.add("product-image-loaded");
         }, { once: true });
 
         image.addEventListener("error", () => {
-            placeholder.className = "no-product-image";
-            placeholder.innerHTML = `
+            loader.className = "no-product-image";
+            loader.removeAttribute("aria-label");
+            loader.innerHTML = `
                 <i class="bi bi-image"></i>
                 <span>Image unavailable</span>
             `;
@@ -274,9 +291,14 @@ function displayProductImages() {
 
         image.src = getOptimizedImageUrl(imageUrls[index], 1000);
 
-        thumbnails.querySelectorAll(".product-thumbnail").forEach((item, i) => {
-            item.classList.toggle("active", i === index);
-        });
+        thumbnails.querySelectorAll(".product-thumbnail").forEach(
+            (thumbnail, thumbnailIndex) => {
+                thumbnail.classList.toggle(
+                    "active",
+                    thumbnailIndex === index
+                );
+            }
+        );
 
         updateOrderTotal();
 
@@ -289,15 +311,39 @@ function displayProductImages() {
         const thumbnail = document.createElement("button");
         thumbnail.type = "button";
         thumbnail.className = "product-thumbnail";
-        thumbnail.setAttribute("aria-label", `View product photo ${index + 1}`);
+        thumbnail.setAttribute(
+            "aria-label",
+            `View product photo ${index + 1}`
+        );
+
+        const thumbnailWrapper = document.createElement("span");
+        thumbnailWrapper.className = "product-thumbnail-image";
+
+        const thumbnailLoader = createImageLoader();
+        thumbnailLoader.classList.add("thumbnail-image-loader");
 
         const thumbnailImage = document.createElement("img");
         thumbnailImage.alt = `Product photo ${index + 1}`;
         thumbnailImage.loading = index === 0 ? "eager" : "lazy";
         thumbnailImage.decoding = "async";
-        thumbnailImage.src = getOptimizedImageUrl(url, 180);
 
-        thumbnail.appendChild(thumbnailImage);
+        thumbnailImage.addEventListener("load", () => {
+            thumbnailLoader.remove();
+            thumbnailImage.classList.add("product-image-loaded");
+        }, { once: true });
+
+        thumbnailImage.addEventListener("error", () => {
+            thumbnailLoader.className = "no-product-image";
+            thumbnailLoader.innerHTML = `
+                <i class="bi bi-image"></i>
+            `;
+            thumbnailImage.remove();
+        }, { once: true });
+
+        thumbnailWrapper.append(thumbnailLoader, thumbnailImage);
+        thumbnail.appendChild(thumbnailWrapper);
+
+        thumbnailImage.src = getOptimizedImageUrl(url, 180);
 
         const price = getPhotoPrice(index);
 
@@ -320,7 +366,6 @@ function displayProductImages() {
 
 // --------------------------------------------------
 // LOAD PRODUCT
-// Starts independently of the authentication check.
 // --------------------------------------------------
 
 async function loadProduct() {
@@ -384,7 +429,7 @@ async function loadProduct() {
     }
 }
 
-// Begin retrieving product data immediately.
+// Start loading product data immediately.
 loadProduct();
 
 // --------------------------------------------------
@@ -411,7 +456,9 @@ async function contactSeller() {
 
     whatsappWindow.opener = null;
 
-    if (contactSellerButton) contactSellerButton.disabled = true;
+    if (contactSellerButton) {
+        contactSellerButton.disabled = true;
+    }
 
     try {
         const snapshot = await getDoc(
@@ -419,29 +466,43 @@ async function contactSeller() {
         );
 
         if (!snapshot.exists()) {
-            throw new Error("This seller has not added a WhatsApp contact yet.");
+            throw new Error(
+                "This seller has not added a WhatsApp contact yet."
+            );
         }
 
         const phone = normalizeTanzanianPhone(snapshot.data().whatsapp);
 
         if (!phone) {
-            throw new Error("The seller's WhatsApp number is missing or invalid.");
+            throw new Error(
+                "The seller's WhatsApp number is missing or invalid."
+            );
         }
 
-        const message = `Hello, I am interested in your product: ${
-            currentProduct.title || "a product"
-        } on ARU Marketplace.`;
+        const message =
+            `Hello, I am interested in your product: ${
+                currentProduct.title || "a product"
+            } on ARU Marketplace.`;
 
         whatsappWindow.location.href =
             `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-        showOrderMessage("Opening WhatsApp to contact the seller...", "success");
+        showOrderMessage(
+            "Opening WhatsApp to contact the seller...",
+            "success"
+        );
     } catch (error) {
         whatsappWindow.close();
         console.error("Contact seller failed:", error);
-        showOrderMessage(error.message || "Unable to contact this seller.", "error");
+
+        showOrderMessage(
+            error.message || "Unable to contact this seller.",
+            "error"
+        );
     } finally {
-        if (contactSellerButton) contactSellerButton.disabled = false;
+        if (contactSellerButton) {
+            contactSellerButton.disabled = false;
+        }
     }
 }
 
@@ -461,7 +522,10 @@ async function placeOrder() {
     }
 
     if (currentProduct.sellerId === currentUser.uid) {
-        showOrderMessage("You cannot place an order for your own product.", "error");
+        showOrderMessage(
+            "You cannot place an order for your own product.",
+            "error"
+        );
         return;
     }
 
@@ -512,7 +576,9 @@ async function placeOrder() {
             latestProduct.status !== "active" ||
             latestProduct.sellerId !== currentProduct.sellerId
         ) {
-            throw new Error("This product has changed. Refresh and try again.");
+            throw new Error(
+                "This product has changed. Refresh and try again."
+            );
         }
 
         const latestPrice =
@@ -521,7 +587,9 @@ async function placeOrder() {
             (selectedImageIndex === 0 ? latestProduct.price : null);
 
         if (latestPrice === null || Number(latestPrice) !== unitPrice) {
-            throw new Error("The photo price has changed. Refresh and try again.");
+            throw new Error(
+                "The photo price has changed. Refresh and try again."
+            );
         }
 
         if (latestProduct.sellerId === currentUser.uid) {
@@ -595,7 +663,6 @@ contactSellerButton?.addEventListener("click", contactSeller);
 
 // --------------------------------------------------
 // AUTHENTICATION
-// Protect order actions, but do not delay product display.
 // --------------------------------------------------
 
 onAuthStateChanged(auth, async (user) => {
@@ -627,6 +694,7 @@ onAuthStateChanged(auth, async (user) => {
         }
     } catch (error) {
         console.error("Account check failed:", error);
+
         showOrderMessage(
             "Could not verify your account permissions. Ordering may be unavailable.",
             "error"
