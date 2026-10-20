@@ -422,7 +422,7 @@ async function reviewProduct(
 
 // ========================================
 // REJECT WITH A REASON
-// ========================================
+
 
 async function rejectProduct(product) {
     const reason = window.prompt(
