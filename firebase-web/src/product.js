@@ -57,24 +57,31 @@ const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get("id");
 
 // --------------------------------------------------
-// UI HELPERS
+// LOADING SCREEN
 // --------------------------------------------------
 
-function formatPrice(price) {
-    const numericPrice = Number(price);
+function showProductLoader() {
+    if (!loadingMessage) return;
 
-    if (!Number.isFinite(numericPrice)) {
-        return "Price not available";
+    loadingMessage.className = "products-loading product-page-loading";
+    loadingMessage.setAttribute("role", "status");
+    loadingMessage.setAttribute("aria-label", "Loading product");
+
+    loadingMessage.innerHTML = `
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+        <span class="loading-dot"></span>
+    `;
+
+    loadingMessage.style.display = "flex";
+
+    if (productContent) {
+        productContent.style.display = "none";
     }
 
-    return `TZS ${numericPrice.toLocaleString()}`;
-}
-
-function showOrderMessage(message, type = "info") {
-    if (!orderMessage) return;
-
-    orderMessage.textContent = message;
-    orderMessage.className = `order-message order-message-${type}`;
+    if (errorMessage) {
+        errorMessage.style.display = "none";
+    }
 }
 
 function showProductError(message = "Unable to load this product.") {
@@ -97,23 +104,60 @@ function showProductContent() {
 }
 
 // --------------------------------------------------
-// THREE-DOT IMAGE LOADER
-// Uses the shared marketplace-loading animation.
+// PRICE HELPERS
 // --------------------------------------------------
 
-function createImageLoader() {
-    const loader = document.createElement("div");
-    loader.className = "product-image-placeholder";
-    loader.setAttribute("role", "status");
-    loader.setAttribute("aria-label", "Loading image");
+function formatPrice(price) {
+    const numericPrice = Number(price);
 
-    for (let i = 0; i < 3; i++) {
-        const dot = document.createElement("span");
-        dot.className = "loading-dot";
-        loader.appendChild(dot);
+    if (!Number.isFinite(numericPrice)) {
+        return "Price not available";
     }
 
-    return loader;
+    return `TZS ${numericPrice.toLocaleString()}`;
+}
+
+function getPhotoPrice(index) {
+    if (!currentProduct) return null;
+
+    const value =
+        currentProduct.imagePrices?.[index] ??
+        currentProduct.imageDetails?.[index]?.price ??
+        (index === 0 ? currentProduct.price : null);
+
+    if (value === null || value === undefined || value === "") {
+        return null;
+    }
+
+    const price = Number(value);
+
+    return Number.isFinite(price) && price >= 0 ? price : null;
+}
+
+function getSelectedPrice() {
+    return getPhotoPrice(selectedImageIndex);
+}
+
+function updateOrderTotal() {
+    if (!currentProduct || !quantityInput || !totalPriceElement) return;
+
+    let quantity = Number.parseInt(quantityInput.value, 10);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        quantity = 1;
+        quantityInput.value = "1";
+    }
+
+    if (quantity > 99) {
+        quantity = 99;
+        quantityInput.value = "99";
+    }
+
+    const price = getSelectedPrice();
+
+    totalPriceElement.textContent = price === null
+        ? "Price not available"
+        : formatPrice(price * quantity);
 }
 
 // --------------------------------------------------
@@ -141,7 +185,7 @@ function getOptimizedImageUrl(url, width = 1000) {
 
         const firstSegment = remainingPath.split("/")[0];
 
-        // Avoid duplicating transformations already in the URL.
+        // Do not add a second transformation to an already transformed URL.
         if (/^(w_|h_|c_|f_auto|q_auto|q_[0-9])/.test(firstSegment)) {
             return url;
         }
@@ -158,74 +202,35 @@ function getOptimizedImageUrl(url, width = 1000) {
 }
 
 // --------------------------------------------------
-// PHOTO PRICES
+// SHARED THREE-DOT LOADER FOR IMAGES
 // --------------------------------------------------
 
-function getPhotoPrice(index) {
-    if (!currentProduct) return null;
+function createImageLoader(extraClass = "") {
+    const loader = document.createElement("div");
 
-    const value =
-        currentProduct.imagePrices?.[index] ??
-        currentProduct.imageDetails?.[index]?.price ??
-        (index === 0 ? currentProduct.price : null);
+    loader.className = `product-image-placeholder ${extraClass}`.trim();
+    loader.setAttribute("role", "status");
+    loader.setAttribute("aria-label", "Loading image");
 
-    if (value === null || value === undefined || value === "") {
-        return null;
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "loading-dot";
+        loader.appendChild(dot);
     }
 
-    const price = Number(value);
-
-    return Number.isFinite(price) && price >= 0 ? price : null;
+    return loader;
 }
 
-function getSelectedPrice() {
-    return getPhotoPrice(selectedImageIndex);
-}
-
-// --------------------------------------------------
-// ORDER TOTAL
-// --------------------------------------------------
-
-function updateOrderTotal() {
-    if (!currentProduct || !quantityInput || !totalPriceElement) return;
-
-    let quantity = Number.parseInt(quantityInput.value, 10);
-
-    if (!Number.isInteger(quantity) || quantity < 1) {
-        quantity = 1;
-        quantityInput.value = "1";
-    }
-
-    if (quantity > 99) {
-        quantity = 99;
-        quantityInput.value = "99";
-    }
-
-    const price = getSelectedPrice();
-
-    totalPriceElement.textContent = price === null
-        ? "Price not available"
-        : formatPrice(price * quantity);
+function showUnavailableImage(container, message = "Image unavailable") {
+    container.className = "no-product-image";
+    container.innerHTML = `
+        <i class="bi bi-image"></i>
+        <span>${message}</span>
+    `;
 }
 
 // --------------------------------------------------
-// TANZANIAN PHONE NUMBER
-// --------------------------------------------------
-
-function normalizeTanzanianPhone(phone) {
-    let digits = String(phone || "").replace(/\D/g, "");
-
-    if (digits.startsWith("0")) {
-        digits = "255" + digits.slice(1);
-    } else if (!digits.startsWith("255")) {
-        return null;
-    }
-
-    return /^255\d{9}$/.test(digits) ? digits : null;
-}
-
-// --------------------------------------------------
-// PRODUCT IMAGES AND THUMBNAILS
+// DISPLAY PRODUCT IMAGES AND THUMBNAILS
 // --------------------------------------------------
 
 function displayProductImages() {
@@ -236,13 +241,8 @@ function displayProductImages() {
     mainImage.replaceChildren();
     thumbnails.replaceChildren();
 
-    if (imageUrls.length === 0) {
-        mainImage.innerHTML = `
-            <div class="no-product-image">
-                <i class="bi bi-image"></i>
-                <span>No Image</span>
-            </div>
-        `;
+    if (!imageUrls.length) {
+        showUnavailableImage(mainImage, "No Image");
         return;
     }
 
@@ -260,6 +260,7 @@ function displayProductImages() {
         image.fetchPriority = index === 0 ? "high" : "auto";
 
         const loader = createImageLoader();
+
         mainImage.replaceChildren(loader);
 
         image.addEventListener("load", () => {
@@ -269,12 +270,7 @@ function displayProductImages() {
         }, { once: true });
 
         image.addEventListener("error", () => {
-            loader.className = "no-product-image";
-            loader.removeAttribute("aria-label");
-            loader.innerHTML = `
-                <i class="bi bi-image"></i>
-                <span>Image unavailable</span>
-            `;
+            showUnavailableImage(loader);
             image.remove();
         }, { once: true });
 
@@ -319,31 +315,27 @@ function displayProductImages() {
         const thumbnailWrapper = document.createElement("span");
         thumbnailWrapper.className = "product-thumbnail-image";
 
-        const thumbnailLoader = createImageLoader();
-        thumbnailLoader.classList.add("thumbnail-image-loader");
+        const loader = createImageLoader("thumbnail-image-loader");
 
-        const thumbnailImage = document.createElement("img");
-        thumbnailImage.alt = `Product photo ${index + 1}`;
-        thumbnailImage.loading = index === 0 ? "eager" : "lazy";
-        thumbnailImage.decoding = "async";
+        const image = document.createElement("img");
+        image.alt = `Product photo ${index + 1}`;
+        image.loading = index === 0 ? "eager" : "lazy";
+        image.decoding = "async";
 
-        thumbnailImage.addEventListener("load", () => {
-            thumbnailLoader.remove();
-            thumbnailImage.classList.add("product-image-loaded");
+        image.addEventListener("load", () => {
+            loader.remove();
+            image.classList.add("product-image-loaded");
         }, { once: true });
 
-        thumbnailImage.addEventListener("error", () => {
-            thumbnailLoader.className = "no-product-image";
-            thumbnailLoader.innerHTML = `
-                <i class="bi bi-image"></i>
-            `;
-            thumbnailImage.remove();
+        image.addEventListener("error", () => {
+            showUnavailableImage(loader, "Unavailable");
+            image.remove();
         }, { once: true });
 
-        thumbnailWrapper.append(thumbnailLoader, thumbnailImage);
+        thumbnailWrapper.append(loader, image);
         thumbnail.appendChild(thumbnailWrapper);
 
-        thumbnailImage.src = getOptimizedImageUrl(url, 180);
+        image.src = getOptimizedImageUrl(url, 180);
 
         const price = getPhotoPrice(index);
 
@@ -369,6 +361,8 @@ function displayProductImages() {
 // --------------------------------------------------
 
 async function loadProduct() {
+    showProductLoader();
+
     if (!productId) {
         showProductError("Product link is missing its ID.");
         return;
@@ -390,6 +384,7 @@ async function loadProduct() {
         }
 
         currentProduct = product;
+        selectedImageIndex = 0;
 
         if (productTitle) {
             productTitle.textContent = product.title || "Untitled Product";
@@ -413,8 +408,6 @@ async function loadProduct() {
                 product.description || "No description available.";
         }
 
-        selectedImageIndex = 0;
-
         if (productPrice) {
             productPrice.textContent =
                 formatPrice(getPhotoPrice(0) ?? product.price);
@@ -429,8 +422,24 @@ async function loadProduct() {
     }
 }
 
-// Start loading product data immediately.
+// Start fetching product data immediately.
 loadProduct();
+
+// --------------------------------------------------
+// TANZANIAN PHONE NUMBER
+// --------------------------------------------------
+
+function normalizeTanzanianPhone(phone) {
+    let digits = String(phone || "").replace(/\D/g, "");
+
+    if (digits.startsWith("0")) {
+        digits = "255" + digits.slice(1);
+    } else if (!digits.startsWith("255")) {
+        return null;
+    }
+
+    return /^255\d{9}$/.test(digits) ? digits : null;
+}
 
 // --------------------------------------------------
 // CONTACT SELLER THROUGH WHATSAPP
@@ -456,9 +465,7 @@ async function contactSeller() {
 
     whatsappWindow.opener = null;
 
-    if (contactSellerButton) {
-        contactSellerButton.disabled = true;
-    }
+    if (contactSellerButton) contactSellerButton.disabled = true;
 
     try {
         const snapshot = await getDoc(
@@ -500,9 +507,7 @@ async function contactSeller() {
             "error"
         );
     } finally {
-        if (contactSellerButton) {
-            contactSellerButton.disabled = false;
-        }
+        if (contactSellerButton) contactSellerButton.disabled = false;
     }
 }
 
