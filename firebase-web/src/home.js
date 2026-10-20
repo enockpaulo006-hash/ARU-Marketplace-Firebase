@@ -63,7 +63,6 @@ function normalizeCategory(value) {
 // ========================================
 
 onAuthStateChanged(auth, async (user) => {
-    // Always allow visitors to remain on the home page.
     if (!user) {
         if (welcomeMessage) {
             welcomeMessage.textContent = "Welcome to ARU Marketplace";
@@ -76,7 +75,6 @@ onAuthStateChanged(auth, async (user) => {
         return;
     }
 
-    // Only signed-in users see Logout.
     if (logoutButton) {
         logoutButton.hidden = false;
     }
@@ -103,7 +101,6 @@ onAuthStateChanged(auth, async (user) => {
     } catch (error) {
         console.error("Could not load user profile:", error);
 
-        // Profile loading failure must not prevent browsing.
         if (welcomeMessage) {
             welcomeMessage.textContent =
                 `Welcome, ${user.email || "User"}!`;
@@ -113,7 +110,6 @@ onAuthStateChanged(auth, async (user) => {
 
 // ========================================
 // LOAD PUBLISHED PRODUCTS
-// This runs for guests and signed-in users.
 // ========================================
 
 async function loadProducts() {
@@ -165,15 +161,70 @@ async function loadProducts() {
     }
 }
 
-// Load products independently of login status.
+// Load products for guests and signed-in users.
 loadProducts();
+
+// ========================================
+// IMAGE OPTIMIZATION
+// Optimizes Cloudinary URLs only.
+// ========================================
+
+function getOptimizedImageUrl(url, width = 450) {
+    if (typeof url !== "string" || !url) {
+        return "";
+    }
+
+    try {
+        const parsedUrl = new URL(url);
+
+        if (!parsedUrl.hostname.endsWith("res.cloudinary.com")) {
+            return url;
+        }
+
+        const uploadMarker = "/upload/";
+        const uploadIndex = parsedUrl.pathname.indexOf(uploadMarker);
+
+        if (uploadIndex === -1) {
+            return url;
+        }
+
+        const pathAfterUpload = parsedUrl.pathname.slice(
+            uploadIndex + uploadMarker.length
+        );
+
+        const firstPathSegment = pathAfterUpload.split("/")[0];
+
+        // Don't add transformations if the URL already has them.
+        if (
+            /^(w_|h_|c_|f_auto|q_auto|q_[0-9]|ar_|dpr_)/.test(
+                firstPathSegment
+            )
+        ) {
+            return url;
+        }
+
+        parsedUrl.pathname =
+            parsedUrl.pathname.slice(
+                0,
+                uploadIndex + uploadMarker.length
+            ) +
+            `w_${width},c_limit,f_auto,q_auto/` +
+            pathAfterUpload;
+
+        return parsedUrl.toString();
+    } catch {
+        return url;
+    }
+}
 
 // ========================================
 // SEARCH AND PRODUCT RENDERING
 // ========================================
 
 function renderProducts() {
-    if (!productsContainer) return;
+    if (!productsContainer) {
+        return;
+    }
 
     const searchTerm = (searchInput?.value || "")
         .trim()
@@ -215,18 +266,37 @@ function renderProducts() {
         const productCard = document.createElement("div");
         productCard.className = "product-card";
 
-        const imageUrl = product.imageUrls?.[0] ||
-            "https://via.placeholder.com/300x220?text=No+Image";
+        // Use the first image for the home-page card.
+        const originalImageUrl = product.imageUrls?.[0] || "";
+
+        const imageUrl = originalImageUrl
+            ? getOptimizedImageUrl(originalImageUrl, 450)
+            : "https://via.placeholder.com/300x220?text=No+Image";
 
         const title = product.title || "Untitled Product";
 
-        const price = product.price != null
-            ? `TZS ${Number(product.price).toLocaleString()}`
+        // The card displays the first photo's price.
+        const firstPhotoPrice =
+            product.imagePrices?.[0] ??
+            product.imageDetails?.[0]?.price ??
+            product.price;
+
+        const validPrice =
+            firstPhotoPrice !== null &&
+            firstPhotoPrice !== undefined &&
+            firstPhotoPrice !== "" &&
+            Number.isFinite(Number(firstPhotoPrice));
+
+        const price = validPrice
+            ? `TZS ${Number(firstPhotoPrice).toLocaleString()}`
             : "Price not available";
 
         const location = product.location || "Location not specified";
         const category = product.category || "Other";
 
+        // ----------------------------------------
+        // PRODUCT IMAGE
+        // ----------------------------------------
 
         const imageWrapper = document.createElement("div");
         imageWrapper.className = "product-image-wrapper";
@@ -243,7 +313,7 @@ function renderProducts() {
         image.className = "product-image product-image-loading";
         image.decoding = "async";
 
-        // Prioritize the first visible product images.
+        // Load the first visible cards eagerly and the rest lazily.
         image.loading = productIndex < 2 ? "eager" : "lazy";
         image.fetchPriority = productIndex === 0 ? "high" : "auto";
 
@@ -263,8 +333,13 @@ function renderProducts() {
         }, { once: true });
 
         imageWrapper.append(imagePlaceholder, image);
+
+        // Set the source after attaching event listeners.
         image.src = imageUrl;
 
+        // ----------------------------------------
+        // PRODUCT INFORMATION
+        // ----------------------------------------
 
         const content = document.createElement("div");
         content.className = "product-card-content";
@@ -323,7 +398,9 @@ if (productsContainer) {
     productsContainer.addEventListener("click", (event) => {
         const button = event.target.closest(".view-product-button");
 
-        if (!button) return;
+        if (!button) {
+            return;
+        }
 
         const productId = button.dataset.productId;
 
@@ -340,7 +417,6 @@ if (productsContainer) {
 
 // ========================================
 // LOGOUT
-// Signing out returns to public browsing.
 // ========================================
 
 if (logoutButton) {
@@ -350,8 +426,7 @@ if (logoutButton) {
         try {
             await signOut(auth);
 
-            // No redirect to login. Remain on the home page.
-            // onAuthStateChanged will hide the Logout button.
+            // Remain on the home page after signing out.
         } catch (error) {
             console.error("Logout failed:", error);
             logoutButton.disabled = false;
@@ -370,19 +445,30 @@ if (categoriesToggle && categoryMenu) {
         if (isOpen) {
             categoryMenu.setAttribute("hidden", "");
             categoriesToggle.classList.remove("open");
-            categoriesToggle.querySelector("span").textContent = "View";
+
+            const label = categoriesToggle.querySelector("span");
+            if (label) {
+                label.textContent = "View";
+            }
+
             categoriesToggle.setAttribute("aria-expanded", "false");
         } else {
             categoryMenu.removeAttribute("hidden");
             categoriesToggle.classList.add("open");
-            categoriesToggle.querySelector("span").textContent = "Hide";
+
+            const label = categoriesToggle.querySelector("span");
+            if (label) {
+                label.textContent = "Hide";
+            }
+
             categoriesToggle.setAttribute("aria-expanded", "true");
         }
     });
 }
 
+// ========================================
 // CATEGORY SELECTION
-
+// ========================================
 
 function selectCategory(category) {
     selectedCategory = normalizeCategory(category);
@@ -422,7 +508,12 @@ categoryOptions.forEach((button) => {
 
         if (categoriesToggle) {
             categoriesToggle.classList.remove("open");
-            categoriesToggle.querySelector("span").textContent = "View";
+
+            const label = categoriesToggle.querySelector("span");
+            if (label) {
+                label.textContent = "View";
+            }
+
             categoriesToggle.setAttribute("aria-expanded", "false");
         }
     });
