@@ -173,7 +173,7 @@ loadProducts();
 // ========================================
 // IMAGE OPTIMIZATION
 // Optimizes Cloudinary URLs only.
-// ========================================
+
 
 function getOptimizedImageUrl(url, width = 450) {
     if (typeof url !== "string" || !url) {
