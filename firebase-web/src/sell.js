@@ -790,7 +790,7 @@ submitAllButton.addEventListener("click", async () => {
 
             // --------------------------------------
             // SAVE PRODUCT TO FIRESTORE
-            // --------------------------------------
+            
 
             submitAllButton.innerHTML = `
                 <i class="bi bi-cloud-upload"></i>
