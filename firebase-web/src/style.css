@@ -4163,3 +4163,55 @@ body:has(.profile-page) .page-header p {
     overflow-wrap: anywhere;
     color: #166534;
 }
+
+/* Marketplace loading animation */
+.products-loading {
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #e0e5eb;
+    border-radius: 10px;
+}
+
+.products-loading .loading-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    animation: marketplace-loading 1s infinite ease-in-out;
+}
+
+.products-loading .loading-dot:nth-child(1) {
+    background: #f4e58a;
+    animation-delay: 0s;
+}
+
+.products-loading .loading-dot:nth-child(2) {
+    background: #72d5a0;
+    animation-delay: 0.15s;
+}
+
+.products-loading .loading-dot:nth-child(3) {
+    background: #f06c55;
+    animation-delay: 0.3s;
+}
+
+@keyframes marketplace-loading {
+    0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.65;
+    }
+
+    30% {
+        transform: translateY(-8px);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .products-loading .loading-dot {
+        animation: none;
+    }
+}
