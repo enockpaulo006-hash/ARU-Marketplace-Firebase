@@ -4164,19 +4164,28 @@ body:has(.profile-page) .page-header p {
     color: #166534;
 }
 
-/* Marketplace loading animation */
+/* Center the loading animation across the full products section */
 .products-loading {
-    min-height: 100px;
+    width: 100%;
+    min-height: 160px;
+    box-sizing: border-box;
+
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+
     background: #ffffff;
     border: 1px solid #e0e5eb;
     border-radius: 10px;
+
+    grid-column: 1 / -1;
 }
 
+/* Animated dots */
 .products-loading .loading-dot {
+    display: block;
+    flex: 0 0 13px;
     width: 13px;
     height: 13px;
     border-radius: 50%;
