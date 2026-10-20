@@ -668,7 +668,7 @@ contactSellerButton?.addEventListener("click", contactSeller);
 
 // --------------------------------------------------
 // AUTHENTICATION
-// --------------------------------------------------
+
 
 onAuthStateChanged(auth, async (user) => {
     currentUser = user || null;
