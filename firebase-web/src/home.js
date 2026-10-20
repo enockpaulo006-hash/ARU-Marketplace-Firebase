@@ -118,8 +118,14 @@ async function loadProducts() {
         return;
     }
 
-    productsContainer.innerHTML =
-        '<p class="empty-products">Loading products...</p>';
+    productsContainer.innerHTML = `
+        <div class="products-loading" role="status"
+            aria-label="Loading products">
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+        </div>
+    `;
 
     try {
         const productsQuery = query(
