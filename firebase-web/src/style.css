@@ -4225,6 +4225,21 @@ body:has(.profile-page) .page-header p {
     }
 }
 
+/* Product page loading screen */
+#product-loading.product-page-loading {
+    width: 100%;
+    min-height: 220px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    grid-column: 1 / -1;
+    background: #f4f7fa;
+    border: none;
+    border-radius: 0;
+}
+
 /* Main product image loader */
 .product-image-placeholder {
     display: flex;
@@ -4237,7 +4252,8 @@ body:has(.profile-page) .page-header p {
     box-sizing: border-box;
 }
 
-/* Three-dot animation reused for product images */
+/* Animated dots */
+#product-loading .loading-dot,
 .product-image-placeholder .loading-dot {
     display: block;
     flex: 0 0 13px;
@@ -4247,22 +4263,25 @@ body:has(.profile-page) .page-header p {
     animation: marketplace-loading 1s infinite ease-in-out;
 }
 
+#product-loading .loading-dot:nth-child(1),
 .product-image-placeholder .loading-dot:nth-child(1) {
     background: #f4e58a;
     animation-delay: 0s;
 }
 
+#product-loading .loading-dot:nth-child(2),
 .product-image-placeholder .loading-dot:nth-child(2) {
     background: #72d5a0;
     animation-delay: 0.15s;
 }
 
+#product-loading .loading-dot:nth-child(3),
 .product-image-placeholder .loading-dot:nth-child(3) {
     background: #f06c55;
     animation-delay: 0.3s;
 }
 
-/* Thumbnail loader */
+/* Thumbnail image area */
 .product-thumbnail-image {
     position: relative;
     display: flex;
@@ -4295,8 +4314,9 @@ body:has(.profile-page) .page-header p {
     height: 7px;
 }
 
-/* Respect reduced-motion settings */
+/* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
+    #product-loading .loading-dot,
     .product-image-placeholder .loading-dot {
         animation: none;
     }
