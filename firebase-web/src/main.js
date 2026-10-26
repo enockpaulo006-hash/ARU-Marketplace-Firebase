@@ -13,10 +13,8 @@ import {
 
 import { auth, db } from "./firebase.js";
 
-// ========================================
-// REGISTRATION FORM
-// ========================================
 
+// REGISTRATION FORM
 document.getElementById("app").innerHTML = `
     <div class="auth-container">
         <h1>ARU Marketplace</h1>
@@ -129,10 +127,7 @@ document.getElementById("app").innerHTML = `
     </div>
 `;
 
-// ========================================
 // PASSWORD VISIBILITY TOGGLE
-// ========================================
-
 document.querySelectorAll(".password-toggle").forEach((button) => {
     button.addEventListener("click", () => {
         const input = document.getElementById(button.dataset.target);
@@ -171,18 +166,14 @@ document.querySelectorAll(".password-toggle").forEach((button) => {
     });
 });
 
-// ========================================
-// FORM ELEMENTS
-// ========================================
 
+// FORM ELEMENTS
 const form = document.getElementById("register-form");
 const message = document.getElementById("message");
 const registerButton = document.getElementById("register-button");
 
-// ========================================
-// REGISTRATION
-// ========================================
 
+// REGISTRATION
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
