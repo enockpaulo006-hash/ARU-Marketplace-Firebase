@@ -108,10 +108,8 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// ========================================
-// LOAD PUBLISHED PRODUCTS
-// ========================================
 
+// LOAD PUBLISHED PRODUCTS
 async function loadProducts() {
     if (!productsContainer) {
         console.error("products-container was not found in home.html.");
@@ -170,7 +168,7 @@ async function loadProducts() {
 // Load products for guests and signed-in users.
 loadProducts();
 
-// ========================================
+
 // IMAGE OPTIMIZATION
 // Optimizes Cloudinary URLs only.
 
