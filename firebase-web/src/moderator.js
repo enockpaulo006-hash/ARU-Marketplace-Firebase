@@ -349,10 +349,8 @@ function createProductCard(product) {
     return card;
 }
 
-// ========================================
-// APPROVE OR REJECT A PRODUCT
-// ========================================
 
+// APPROVE OR REJECT A PRODUCT
 async function reviewProduct(
     product,
     newStatus,
@@ -420,10 +418,8 @@ async function reviewProduct(
     }
 }
 
-// ========================================
+
 // REJECT WITH A REASON
-
-
 async function rejectProduct(product) {
     const reason = window.prompt(
         `Why are you rejecting "${product.title}"? Enter a clear reason for the seller.`
