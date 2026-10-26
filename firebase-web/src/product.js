@@ -646,10 +646,7 @@ async function placeOrder() {
     }
 }
 
-// --------------------------------------------------
 // QUANTITY CONTROLS
-// --------------------------------------------------
-
 decreaseQuantityButton?.addEventListener("click", () => {
     const quantity = Number.parseInt(quantityInput.value, 10) || 1;
     quantityInput.value = String(Math.max(1, quantity - 1));
@@ -666,10 +663,7 @@ quantityInput?.addEventListener("input", updateOrderTotal);
 placeOrderButton?.addEventListener("click", placeOrder);
 contactSellerButton?.addEventListener("click", contactSeller);
 
-// --------------------------------------------------
 // AUTHENTICATION
-
-
 onAuthStateChanged(auth, async (user) => {
     currentUser = user || null;
     isModerator = false;
