@@ -82,10 +82,8 @@ document.getElementById("app").innerHTML = `
     </div>
 `;
 
-// ========================================
-// PASSWORD VISIBILITY TOGGLE
-// ========================================
 
+// PASSWORD VISIBILITY TOGGLE
 const passwordInput = document.getElementById("password");
 const passwordToggle = document.getElementById("password-toggle");
 
@@ -134,19 +132,14 @@ passwordToggle.addEventListener("click", () => {
         `;
 });
 
-// ========================================
 // FORM ELEMENTS
-// ========================================
-
 const form = document.getElementById("login-form");
 const message = document.getElementById("message");
 const forgotPassword = document.getElementById("forgot-password");
 const loginButton = document.getElementById("login-button");
 
-// ========================================
-// LOGIN
-// ========================================
 
+// LOGIN
 form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -244,9 +237,7 @@ form.addEventListener("submit", async (event) => {
     }
 });
 
-// ========================================
 // FORGOT PASSWORD
-// ========================================
 
 forgotPassword.addEventListener("click", async () => {
     const email = document.getElementById("email").value.trim();
