@@ -872,10 +872,7 @@ submitAllButton.addEventListener("click", async () => {
     }
 });
 
-// --------------------------------------------------
 // MESSAGE
-
-
 function showSellMessage(message, type) {
     sellMessage.textContent = message;
     sellMessage.className = `sell-message ${type}`;
@@ -886,6 +883,4 @@ function showSellMessage(message, type) {
     });
 }
 
-// ========================================
 // INITIAL PRODUCT FORM
-
