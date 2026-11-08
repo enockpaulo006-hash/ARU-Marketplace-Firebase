@@ -8,7 +8,6 @@ import {
     getDocs,
     query,
     where,
-    limit,
     doc,
     getDoc
 } from "firebase/firestore";
@@ -108,8 +107,11 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-
+// ========================================
 // LOAD PUBLISHED PRODUCTS
+// No fixed product limit.
+// ========================================
+
 async function loadProducts() {
     if (!productsContainer) {
         console.error("products-container was not found in home.html.");
@@ -128,8 +130,7 @@ async function loadProducts() {
     try {
         const productsQuery = query(
             collection(db, "products"),
-            where("status", "==", "active"),
-            limit(20)
+            where("status", "==", "active")
         );
 
         const snapshot = await getDocs(productsQuery);
@@ -152,7 +153,12 @@ async function loadProducts() {
             return dateB - dateA;
         });
 
+        console.log(
+            `Successfully loaded ${allProducts.length} active products.`
+        );
+
         renderProducts();
+
     } catch (error) {
         console.error("Could not load products:", error);
 
@@ -168,10 +174,10 @@ async function loadProducts() {
 // Load products for guests and signed-in users.
 loadProducts();
 
-
+// ========================================
 // IMAGE OPTIMIZATION
 // Optimizes Cloudinary URLs only.
-
+// ========================================
 
 function getOptimizedImageUrl(url, width = 450) {
     if (typeof url !== "string" || !url) {
@@ -216,6 +222,7 @@ function getOptimizedImageUrl(url, width = 450) {
             pathAfterUpload;
 
         return parsedUrl.toString();
+
     } catch {
         return url;
     }
@@ -456,6 +463,7 @@ if (categoriesToggle && categoryMenu) {
             }
 
             categoriesToggle.setAttribute("aria-expanded", "false");
+
         } else {
             categoryMenu.removeAttribute("hidden");
             categoriesToggle.classList.add("open");
