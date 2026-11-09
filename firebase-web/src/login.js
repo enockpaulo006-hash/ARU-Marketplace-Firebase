@@ -82,7 +82,6 @@ document.getElementById("app").innerHTML = `
     </div>
 `;
 
-
 // PASSWORD VISIBILITY TOGGLE
 const passwordInput = document.getElementById("password");
 const passwordToggle = document.getElementById("password-toggle");
