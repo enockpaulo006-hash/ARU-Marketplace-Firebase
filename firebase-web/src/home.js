@@ -14,9 +14,7 @@ import {
 
 import { auth, db } from "./firebase.js";
 
-// ========================================
 // ELEMENTS
-// ========================================
 
 const welcomeMessage = document.getElementById("welcome-message");
 const logoutButton = document.getElementById("logout-button");
@@ -28,16 +26,12 @@ const categoryMenu = document.getElementById("category-menu");
 const categoryIcons = document.querySelectorAll(".category-icon");
 const categoryOptions = document.querySelectorAll(".category-option");
 
-// ========================================
 // FILTER STATE
-// ========================================
 
 let allProducts = [];
 let selectedCategory = "all";
 
-// ========================================
 // CATEGORY NORMALIZATION
-// ========================================
 
 function normalizeCategory(value) {
     const category = String(value || "other")
@@ -56,10 +50,9 @@ function normalizeCategory(value) {
     return aliases[category] || category;
 }
 
-// ========================================
+
 // AUTHENTICATION
 // Guests can browse without an account.
-// ========================================
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
@@ -107,10 +100,9 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// ========================================
+
 // LOAD PUBLISHED PRODUCTS
 // No fixed product limit.
-// ========================================
 
 async function loadProducts() {
     if (!productsContainer) {
@@ -174,10 +166,9 @@ async function loadProducts() {
 // Load products for guests and signed-in users.
 loadProducts();
 
-// ========================================
+
 // IMAGE OPTIMIZATION
 // Optimizes Cloudinary URLs only.
-// ========================================
 
 function getOptimizedImageUrl(url, width = 450) {
     if (typeof url !== "string" || !url) {
@@ -228,10 +219,7 @@ function getOptimizedImageUrl(url, width = 450) {
     }
 }
 
-// ========================================
 // SEARCH AND PRODUCT RENDERING
-// ========================================
-
 function renderProducts() {
     if (!productsContainer) {
         return;
@@ -305,10 +293,8 @@ function renderProducts() {
         const location = product.location || "Location not specified";
         const category = product.category || "Other";
 
-        // ----------------------------------------
+       
         // PRODUCT IMAGE
-        // ----------------------------------------
-
         const imageWrapper = document.createElement("div");
         imageWrapper.className = "product-image-wrapper";
 
@@ -348,10 +334,8 @@ function renderProducts() {
         // Set the source after attaching event listeners.
         image.src = imageUrl;
 
-        // ----------------------------------------
-        // PRODUCT INFORMATION
-        // ----------------------------------------
-
+      
+        // PRODUCT INFORMATION  
         const content = document.createElement("div");
         content.className = "product-card-content";
 
@@ -401,9 +385,7 @@ if (searchInput) {
     searchInput.addEventListener("input", renderProducts);
 }
 
-// ========================================
 // VIEW PRODUCT
-// ========================================
 
 if (productsContainer) {
     productsContainer.addEventListener("click", (event) => {
@@ -426,9 +408,7 @@ if (productsContainer) {
     });
 }
 
-// ========================================
 // LOGOUT
-// ========================================
 
 if (logoutButton) {
     logoutButton.addEventListener("click", async () => {
@@ -445,9 +425,7 @@ if (logoutButton) {
     });
 }
 
-// ========================================
 // EXPAND / COLLAPSE CATEGORY MENU
-// ========================================
 
 if (categoriesToggle && categoryMenu) {
     categoriesToggle.addEventListener("click", () => {
