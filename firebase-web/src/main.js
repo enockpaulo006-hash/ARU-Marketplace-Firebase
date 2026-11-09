@@ -13,7 +13,6 @@ import {
 
 import { auth, db } from "./firebase.js";
 
-
 // REGISTRATION FORM
 document.getElementById("app").innerHTML = `
     <div class="auth-container">
