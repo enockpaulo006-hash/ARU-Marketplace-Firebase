@@ -13,9 +13,7 @@ import {
 
 import { auth, db } from "./firebase.js";
 
-// ========================================
 // PAGE ELEMENTS
-// ========================================
 
 const list = document.getElementById("moderator-products-list");
 const count = document.getElementById("moderator-count");
@@ -37,10 +35,7 @@ if (!list || !count || !searchInput) {
     initializeModeratorDashboard();
 }
 
-// ========================================
 // INITIALIZE AND AUTHORIZE
-// ========================================
-
 function initializeModeratorDashboard() {
     onAuthStateChanged(auth, async (user) => {
         authorized = false;
@@ -108,10 +103,7 @@ function initializeModeratorDashboard() {
     }
 }
 
-// ========================================
 // DISPLAY MESSAGES
-// ========================================
-
 function showMessage(text) {
     if (!list) return;
 
@@ -124,10 +116,7 @@ function showMessage(text) {
     list.appendChild(paragraph);
 }
 
-// ========================================
 // LOAD PRODUCTS
-// ========================================
-
 async function loadProducts() {
     if (!authorized || loading) return;
 
@@ -195,9 +184,7 @@ async function loadProducts() {
     }
 }
 
-// ========================================
 // FILTER AND SEARCH PRODUCTS
-// ========================================
 
 function renderProducts() {
     if (!list || !count || !searchInput) return;
@@ -243,10 +230,7 @@ function renderProducts() {
     });
 }
 
-// ========================================
 // CREATE A PRODUCT CARD
-// ========================================
-
 function createProductCard(product) {
     const card = document.createElement("article");
     card.className = "my-product-card";
