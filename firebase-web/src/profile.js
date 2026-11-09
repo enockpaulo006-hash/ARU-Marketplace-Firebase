@@ -1,4 +1,3 @@
-
 import "./style.css";
 
 import { onAuthStateChanged, signOut } from "firebase/auth";
