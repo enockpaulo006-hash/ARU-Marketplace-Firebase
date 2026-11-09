@@ -836,10 +836,7 @@ submitAllButton.addEventListener("click", async () => {
             savedProducts++;
         }
 
-        // ------------------------------------------
         // SUCCESS
-        // ------------------------------------------
-
         showSellMessage(
             `Successfully submitted ${savedProducts} product${savedProducts === 1 ? "" : "s"} for review with ${uploadedCount} photo${uploadedCount === 1 ? "" : "s"}.`,
             "success"
