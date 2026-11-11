@@ -1,0 +1,218 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == "ADMIN";
+    }
+
+    function selectedPhotoPrice(productData, imageIndex) {
+      return (
+        productData.keys().hasAny(["imagePrices"])
+        && productData.imagePrices is list
+        && imageIndex < productData.imagePrices.size()
+        && productData.imagePrices[imageIndex] is number
+      )
+        ? productData.imagePrices[imageIndex]
+        : (
+            productData.keys().hasAny(["imageDetails"])
+            && productData.imageDetails is list
+            && imageIndex < productData.imageDetails.size()
+            && productData.imageDetails[imageIndex] is map
+            && productData.imageDetails[imageIndex].keys().hasAny(["price"])
+            && productData.imageDetails[imageIndex].price is number
+          )
+          ? productData.imageDetails[imageIndex].price
+          : (imageIndex == 0 ? productData.price : -1);
+    }
+
+    match /users/{userId} {
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /admins/{adminId} {
+      allow get: if request.auth != null && request.auth.uid == adminId;
+      allow list, create, update, delete: if false;
+    }
+
+    match /sellerContacts/{sellerId} {
+      allow get: if true;
+      allow list: if false;
+
+      allow create: if request.auth != null
+        && request.auth.uid == sellerId
+        && request.resource.data.keys().hasAll(["whatsapp", "updatedAt"])
+        && request.resource.data.keys().hasOnly(["whatsapp", "updatedAt"])
+        && request.resource.data.whatsapp is string
+        && request.resource.data.whatsapp.size() >= 9
+        && request.resource.data.whatsapp.size() <= 16
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if request.auth != null
+        && request.auth.uid == sellerId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["whatsapp", "updatedAt"])
+        && request.resource.data.whatsapp is string
+        && request.resource.data.whatsapp.size() >= 9
+        && request.resource.data.whatsapp.size() <= 16
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if resource.data.status == "active"
+        || (request.auth != null
+          && (resource.data.sellerId == request.auth.uid || isAdmin()));
+
+      allow create: if request.auth != null
+        && !isAdmin()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.status == "pending";
+
+      allow update: if (
+        isAdmin()
+        && resource.data.status == "pending"
+        && request.resource.data.sellerId == resource.data.sellerId
+        && request.resource.data.status in ["active", "rejected"]
+        && request.resource.data.reviewedBy == request.auth.uid
+        && request.resource.data.reviewedAt == request.time
+        && (
+          (request.resource.data.status == "active" && request.resource.data.rejectionReason == "")
+          || (request.resource.data.status == "rejected"
+            && request.resource.data.rejectionReason is string
+            && request.resource.data.rejectionReason.size() > 0)
+        )
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          "status", "rejectionReason", "reviewedBy", "reviewedAt", "updatedAt"
+        ])
+      ) || (
+        request.auth != null
+        && !isAdmin()
+        && resource.data.sellerId == request.auth.uid
+        && request.resource.data.sellerId == resource.data.sellerId
+        && (
+          (request.resource.data.status == resource.data.status
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "title", "category", "price", "description",
+              "productCondition", "location", "updatedAt"
+            ]))
+          ||
+          (resource.data.status in ["active", "rejected", "hidden"]
+            && request.resource.data.status == "pending"
+            && request.resource.data.rejectionReason == ""
+            && request.resource.data.reviewedBy == ""
+            && request.resource.data.reviewedAt == null
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "title", "category", "price", "description",
+              "productCondition", "location", "updatedAt",
+              "status", "rejectionReason", "reviewedBy", "reviewedAt"
+            ]))
+        )
+      );
+
+      allow delete: if request.auth != null
+        && !isAdmin()
+        && resource.data.sellerId == request.auth.uid
+        && resource.data.status != "sold";
+    }
+
+    match /orders/{orderId} {
+      allow get, list: if request.auth != null
+        && (resource.data.buyerId == request.auth.uid
+          || resource.data.sellerId == request.auth.uid);
+
+      allow create: if !isAdmin()
+        && request.resource.data.keys().hasAll([
+          "buyerId", "sellerId", "productId", "productTitle",
+          "productImage", "selectedImageIndex", "unitPrice",
+          "quantity", "totalPrice", "status", "createdAt", "updatedAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "buyerId", "sellerId", "productId", "productTitle",
+          "productImage", "selectedImageIndex", "unitPrice",
+          "quantity", "totalPrice", "status", "createdAt",
+          "updatedAt", "buyerName", "buyerPhone"
+        ])
+        && (
+          (request.auth != null
+            && request.resource.data.buyerId == request.auth.uid
+            && request.resource.data.sellerId != request.auth.uid
+            && !request.resource.data.keys().hasAny(["buyerName", "buyerPhone"]))
+          ||
+          (request.auth == null
+            && request.resource.data.buyerId == ""
+            && request.resource.data.buyerName is string
+            && request.resource.data.buyerName.size() > 0
+            && request.resource.data.buyerName.size() <= 80
+            && request.resource.data.buyerPhone is string
+            && request.resource.data.buyerPhone.matches("^255[0-9]{9}$"))
+        )
+        && request.resource.data.productId is string
+        && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.status == "active"
+        && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sellerId == request.resource.data.sellerId
+        && request.resource.data.productTitle == get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.title
+        && request.resource.data.selectedImageIndex is int
+        && request.resource.data.selectedImageIndex >= 0
+        && request.resource.data.unitPrice is number
+        && request.resource.data.unitPrice == selectedPhotoPrice(
+          get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data,
+          request.resource.data.selectedImageIndex
+        )
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity >= 1
+        && request.resource.data.quantity <= 99
+        && request.resource.data.totalPrice == request.resource.data.unitPrice * request.resource.data.quantity
+        && request.resource.data.status == "pending"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+
+      allow update: if request.auth != null
+        && !isAdmin()
+        && resource.data.sellerId == request.auth.uid
+        && request.resource.data.buyerId == resource.data.buyerId
+        && request.resource.data.sellerId == resource.data.sellerId
+        && request.resource.data.productId == resource.data.productId
+        && request.resource.data.productTitle == resource.data.productTitle
+        && request.resource.data.productImage == resource.data.productImage
+        && request.resource.data.selectedImageIndex == resource.data.get("selectedImageIndex", -1)
+        && request.resource.data.unitPrice == resource.data.unitPrice
+        && request.resource.data.quantity == resource.data.quantity
+        && request.resource.data.totalPrice == resource.data.totalPrice
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.get("buyerName", "") == resource.data.get("buyerName", "")
+        && request.resource.data.get("buyerPhone", "") == resource.data.get("buyerPhone", "")
+        && request.resource.data.updatedAt == request.time
+        && (
+          (resource.data.status == "pending"
+            && request.resource.data.status in ["accepted", "rejected"]
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"]))
+          ||
+          (resource.data.status == "accepted"
+            && request.resource.data.status == "completed"
+            && request.resource.data.completedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              "status", "updatedAt", "completedAt"
+            ]))
+        );
+
+      allow update: if request.auth != null
+        && !isAdmin()
+        && resource.data.buyerId == request.auth.uid
+        && resource.data.status == "pending"
+        && request.resource.data.status == "cancelled"
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "updatedAt"])
+        && request.resource.data.updatedAt == request.time;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
