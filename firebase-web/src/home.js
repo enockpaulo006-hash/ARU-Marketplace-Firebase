@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 
 import {
     collection,
-    getDocs,
+    getDocsFromServer,
     query,
     where,
     doc,
@@ -14,7 +14,9 @@ import {
 
 import { auth, db } from "./firebase.js";
 
+// ========================================
 // ELEMENTS
+// ========================================
 
 const welcomeMessage = document.getElementById("welcome-message");
 const logoutButton = document.getElementById("logout-button");
@@ -26,12 +28,24 @@ const categoryMenu = document.getElementById("category-menu");
 const categoryIcons = document.querySelectorAll(".category-icon");
 const categoryOptions = document.querySelectorAll(".category-option");
 
+// ========================================
+// CACHE CONFIGURATION
+// ========================================
+
+// Cache is specific to this Firebase project.
+const PRODUCTS_CACHE_KEY =
+    "aru_marketplace_active_products_v1";
+
+// ========================================
 // FILTER STATE
+// ========================================
 
 let allProducts = [];
 let selectedCategory = "all";
 
+// ========================================
 // CATEGORY NORMALIZATION
+// ========================================
 
 function normalizeCategory(value) {
     const category = String(value || "other")
@@ -50,14 +64,98 @@ function normalizeCategory(value) {
     return aliases[category] || category;
 }
 
+// ========================================
+// PRODUCT CACHE
+// ========================================
 
+// Read previously saved products.
+function getCachedProducts() {
+    try {
+        const cachedData = localStorage.getItem(
+            PRODUCTS_CACHE_KEY
+        );
+
+        if (!cachedData) {
+            return null;
+        }
+
+        const parsedData = JSON.parse(cachedData);
+
+        if (!Array.isArray(parsedData.products)) {
+            return null;
+        }
+
+        return parsedData.products;
+
+    } catch (error) {
+        console.warn("Could not read product cache:", error);
+        return null;
+    }
+}
+
+// Save products for the next visit.
+function saveProductsToCache(products) {
+    try {
+        const cacheData = {
+            products: products,
+            savedAt: Date.now()
+        };
+
+        localStorage.setItem(
+            PRODUCTS_CACHE_KEY,
+            JSON.stringify(cacheData)
+        );
+
+    } catch (error) {
+        console.warn("Could not save product cache:", error);
+    }
+}
+
+// ========================================
+// PRODUCT DATE HANDLING
+// ========================================
+
+function getCreatedAtMillis(product) {
+    const createdAt = product.createdAt;
+
+    if (!createdAt) {
+        return 0;
+    }
+
+    // Firestore Timestamp.
+    if (typeof createdAt.toMillis === "function") {
+        return createdAt.toMillis();
+    }
+
+    // Serialized Firestore Timestamp.
+    if (typeof createdAt.seconds === "number") {
+        return createdAt.seconds * 1000;
+    }
+
+    // Date or serialized date string.
+    const parsedDate = new Date(createdAt).getTime();
+
+    return Number.isFinite(parsedDate) ? parsedDate : 0;
+}
+
+// Sort newest products first.
+function sortProducts(products) {
+    return [...products].sort((a, b) => {
+        return getCreatedAtMillis(b) -
+            getCreatedAtMillis(a);
+    });
+}
+
+// ========================================
 // AUTHENTICATION
 // Guests can browse without an account.
+// ========================================
 
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         if (welcomeMessage) {
-            welcomeMessage.textContent = "Welcome to ARU Marketplace";
+            welcomeMessage.textContent =
+                "Welcome to ARU Marketplace";
         }
 
         if (logoutButton) {
@@ -72,7 +170,8 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     if (welcomeMessage) {
-        welcomeMessage.textContent = "Welcome to ARU Marketplace";
+        welcomeMessage.textContent =
+            "Welcome to ARU Marketplace";
     }
 
     try {
@@ -84,14 +183,20 @@ onAuthStateChanged(auth, async (user) => {
             const fullName = userData.fullName || "User";
 
             if (welcomeMessage) {
-                welcomeMessage.textContent = `Welcome, ${fullName}!`;
+                welcomeMessage.textContent =
+                    `Welcome, ${fullName}!`;
             }
+
         } else if (welcomeMessage) {
             welcomeMessage.textContent =
                 `Welcome, ${user.email || "User"}!`;
         }
+
     } catch (error) {
-        console.error("Could not load user profile:", error);
+        console.error(
+            "Could not load user profile:",
+            error
+        );
 
         if (welcomeMessage) {
             welcomeMessage.textContent =
@@ -100,24 +205,65 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// ========================================
+// LOADING INDICATOR
+// Only shown when there is no cached data.
+// ========================================
 
+function showProductsLoading() {
+    if (!productsContainer) return;
+
+    productsContainer.innerHTML = `
+        <div class="products-loading"
+             role="status"
+             aria-label="Loading products">
+
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+            <span class="loading-dot"></span>
+
+        </div>
+    `;
+}
+
+// ========================================
 // LOAD PUBLISHED PRODUCTS
-// No fixed product limit.
+// CACHE FIRST + BACKGROUND REFRESH
+// ========================================
 
 async function loadProducts() {
     if (!productsContainer) {
-        console.error("products-container was not found in home.html.");
+        console.error(
+            "products-container was not found in home.html."
+        );
         return;
     }
 
-    productsContainer.innerHTML = `
-        <div class="products-loading" role="status"
-            aria-label="Loading products">
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-            <span class="loading-dot"></span>
-        </div>
-    `;
+    // STEP 1: Read cached products immediately.
+    const cachedProducts = getCachedProducts();
+
+    const hasCachedProducts =
+        Array.isArray(cachedProducts);
+
+    if (hasCachedProducts) {
+
+        allProducts = sortProducts(cachedProducts);
+
+        // Display immediately without waiting for Firestore.
+        renderProducts();
+
+        console.log(
+            `Displayed ${allProducts.length} cached products.`
+        );
+
+    } else {
+
+        // First visit: no cache available.
+        showProductsLoading();
+    }
+
+    // STEP 2: Refresh products from Firestore.
+    // This runs in the background when cached products exist.
 
     try {
         const productsQuery = query(
@@ -125,50 +271,63 @@ async function loadProducts() {
             where("status", "==", "active")
         );
 
-        const snapshot = await getDocs(productsQuery);
-
-        allProducts = snapshot.docs.map((productDoc) => ({
-            id: productDoc.id,
-            ...productDoc.data()
-        }));
-
-        // Newest products first.
-        allProducts.sort((a, b) => {
-            const dateA = a.createdAt?.toMillis
-                ? a.createdAt.toMillis()
-                : 0;
-
-            const dateB = b.createdAt?.toMillis
-                ? b.createdAt.toMillis()
-                : 0;
-
-            return dateB - dateA;
-        });
-
-        console.log(
-            `Successfully loaded ${allProducts.length} active products.`
+        const snapshot = await getDocsFromServer(
+            productsQuery
         );
+
+        const freshProducts = snapshot.docs.map(
+            (productDoc) => ({
+                id: productDoc.id,
+                ...productDoc.data()
+            })
+        );
+
+        const sortedProducts = sortProducts(freshProducts);
+
+        // STEP 3: Save the latest products.
+        saveProductsToCache(sortedProducts);
+
+        // STEP 4: Update the displayed products.
+        allProducts = sortedProducts;
 
         renderProducts();
 
-    } catch (error) {
-        console.error("Could not load products:", error);
+        console.log(
+            `Successfully refreshed ${allProducts.length} active products.`
+        );
 
-        productsContainer.innerHTML = `
-            <div class="empty-products">
-                <p>Unable to load products.</p>
-                <p>Please try again later.</p>
-            </div>
-        `;
+    } catch (error) {
+        console.error(
+            "Could not refresh products from Firestore:",
+            error
+        );
+
+        // If cached products exist, keep displaying them.
+        if (hasCachedProducts) {
+
+            console.log(
+                "Continuing with previously cached products."
+            );
+
+        } else {
+
+            productsContainer.innerHTML = `
+                <div class="empty-products">
+                    <p>Unable to load products.</p>
+                    <p>Please check your internet connection and try again.</p>
+                </div>
+            `;
+        }
     }
 }
 
 // Load products for guests and signed-in users.
 loadProducts();
 
-
+// ========================================
 // IMAGE OPTIMIZATION
 // Optimizes Cloudinary URLs only.
+// ========================================
 
 function getOptimizedImageUrl(url, width = 450) {
     if (typeof url !== "string" || !url) {
@@ -178,12 +337,16 @@ function getOptimizedImageUrl(url, width = 450) {
     try {
         const parsedUrl = new URL(url);
 
-        if (!parsedUrl.hostname.endsWith("res.cloudinary.com")) {
+        if (
+            !parsedUrl.hostname.endsWith("res.cloudinary.com")
+        ) {
             return url;
         }
 
         const uploadMarker = "/upload/";
-        const uploadIndex = parsedUrl.pathname.indexOf(uploadMarker);
+
+        const uploadIndex =
+            parsedUrl.pathname.indexOf(uploadMarker);
 
         if (uploadIndex === -1) {
             return url;
@@ -193,7 +356,8 @@ function getOptimizedImageUrl(url, width = 450) {
             uploadIndex + uploadMarker.length
         );
 
-        const firstPathSegment = pathAfterUpload.split("/")[0];
+        const firstPathSegment =
+            pathAfterUpload.split("/")[0];
 
         // Don't add transformations if the URL already has them.
         if (
@@ -219,7 +383,10 @@ function getOptimizedImageUrl(url, width = 450) {
     }
 }
 
+// ========================================
 // SEARCH AND PRODUCT RENDERING
+// ========================================
+
 function renderProducts() {
     if (!productsContainer) {
         return;
@@ -229,52 +396,73 @@ function renderProducts() {
         .trim()
         .toLowerCase();
 
-    const filteredProducts = allProducts.filter((product) => {
-        const category = normalizeCategory(product.category);
-        const title = String(product.title || "").toLowerCase();
-        const description = String(product.description || "").toLowerCase();
-        const location = String(product.location || "").toLowerCase();
-        const originalCategory = String(product.category || "").toLowerCase();
+    const filteredProducts = allProducts.filter(
+        (product) => {
 
-        const matchesCategory =
-            selectedCategory === "all" ||
-            category === selectedCategory;
+            const category =
+                normalizeCategory(product.category);
 
-        const matchesSearch =
-            title.includes(searchTerm) ||
-            description.includes(searchTerm) ||
-            location.includes(searchTerm) ||
-            originalCategory.includes(searchTerm);
+            const title =
+                String(product.title || "").toLowerCase();
 
-        return matchesCategory && matchesSearch;
-    });
+            const description =
+                String(product.description || "").toLowerCase();
 
+            const location =
+                String(product.location || "").toLowerCase();
+
+            const originalCategory =
+                String(product.category || "").toLowerCase();
+
+            const matchesCategory =
+                selectedCategory === "all" ||
+                category === selectedCategory;
+
+            const matchesSearch =
+                title.includes(searchTerm) ||
+                description.includes(searchTerm) ||
+                location.includes(searchTerm) ||
+                originalCategory.includes(searchTerm);
+
+            return matchesCategory && matchesSearch;
+        }
+    );
+
+    // No matching products.
     if (filteredProducts.length === 0) {
+
         productsContainer.innerHTML = `
             <div class="empty-products">
                 <p>No products found.</p>
                 <p>Try another search or select a different category.</p>
             </div>
         `;
+
         return;
     }
 
     productsContainer.innerHTML = "";
 
     filteredProducts.forEach((product, productIndex) => {
+
         const productCard = document.createElement("div");
         productCard.className = "product-card";
 
-        // Use the first image for the home-page card.
-        const originalImageUrl = product.imageUrls?.[0] || "";
+        // ========================================
+        // PRODUCT IMAGE
+        // ========================================
+
+        const originalImageUrl =
+            product.imageUrls?.[0] || "";
 
         const imageUrl = originalImageUrl
             ? getOptimizedImageUrl(originalImageUrl, 450)
             : "https://via.placeholder.com/300x220?text=No+Image";
 
-        const title = product.title || "Untitled Product";
+        const title =
+            product.title || "Untitled Product";
 
-        // The card displays the first photo's price.
+        // First photo's price.
         const firstPhotoPrice =
             product.imagePrices?.[0] ??
             product.imageDetails?.[0]?.price ??
@@ -290,82 +478,138 @@ function renderProducts() {
             ? `TZS ${Number(firstPhotoPrice).toLocaleString()}`
             : "Price not available";
 
-        const location = product.location || "Location not specified";
-        const category = product.category || "Other";
+        const location =
+            product.location || "Location not specified";
 
-       
-        // PRODUCT IMAGE
-        const imageWrapper = document.createElement("div");
-        imageWrapper.className = "product-image-wrapper";
+        const category =
+            product.category || "Other";
 
-        const imagePlaceholder = document.createElement("div");
-        imagePlaceholder.className = "product-image-placeholder";
+        const imageWrapper =
+            document.createElement("div");
+
+        imageWrapper.className =
+            "product-image-wrapper";
+
+        const imagePlaceholder =
+            document.createElement("div");
+
+        imagePlaceholder.className =
+            "product-image-placeholder";
+
         imagePlaceholder.innerHTML = `
             <span class="image-loading-spinner"></span>
             <span>Loading image...</span>
         `;
 
         const image = document.createElement("img");
+
         image.alt = title;
-        image.className = "product-image product-image-loading";
+
+        image.className =
+            "product-image product-image-loading";
+
         image.decoding = "async";
 
-        // Load the first visible cards eagerly and the rest lazily.
-        image.loading = productIndex < 2 ? "eager" : "lazy";
-        image.fetchPriority = productIndex === 0 ? "high" : "auto";
+        // First visible images load eagerly.
+        image.loading =
+            productIndex < 2 ? "eager" : "lazy";
+
+        image.fetchPriority =
+            productIndex === 0 ? "high" : "auto";
 
         image.addEventListener("load", () => {
+
             imagePlaceholder.remove();
-            image.classList.remove("product-image-loading");
-            image.classList.add("product-image-loaded");
+
+            image.classList.remove(
+                "product-image-loading"
+            );
+
+            image.classList.add(
+                "product-image-loaded"
+            );
+
         }, { once: true });
 
         image.addEventListener("error", () => {
-            imagePlaceholder.className = "product-image-placeholder";
+
+            imagePlaceholder.className =
+                "product-image-placeholder";
+
             imagePlaceholder.innerHTML = `
                 <i class="bi bi-image"></i>
                 <span>Image unavailable</span>
             `;
+
             image.remove();
+
         }, { once: true });
 
-        imageWrapper.append(imagePlaceholder, image);
+        imageWrapper.append(
+            imagePlaceholder,
+            image
+        );
 
-        // Set the source after attaching event listeners.
+        // Set image source after attaching listeners.
         image.src = imageUrl;
 
-      
-        // PRODUCT INFORMATION  
+        // ========================================
+        // PRODUCT INFORMATION
+        // ========================================
+
         const content = document.createElement("div");
-        content.className = "product-card-content";
+
+        content.className =
+            "product-card-content";
 
         const heading = document.createElement("h3");
+
         heading.textContent = title;
 
-        const priceElement = document.createElement("p");
+        const priceElement =
+            document.createElement("p");
+
         priceElement.className = "product-price";
         priceElement.textContent = price;
 
-        const categoryElement = document.createElement("p");
-        categoryElement.className = "product-category";
+        const categoryElement =
+            document.createElement("p");
+
+        categoryElement.className =
+            "product-category";
+
         categoryElement.textContent = category;
 
-        const locationElement = document.createElement("p");
-        locationElement.className = "product-location";
+        const locationElement =
+            document.createElement("p");
 
-        const locationIcon = document.createElement("i");
-        locationIcon.className = "bi bi-geo-alt-fill";
+        locationElement.className =
+            "product-location";
+
+        const locationIcon =
+            document.createElement("i");
+
+        locationIcon.className =
+            "bi bi-geo-alt-fill";
 
         locationElement.append(
             locationIcon,
             document.createTextNode(` ${location}`)
         );
 
-        const viewButton = document.createElement("button");
+        const viewButton =
+            document.createElement("button");
+
         viewButton.type = "button";
-        viewButton.className = "view-product-button";
-        viewButton.dataset.productId = product.id;
-        viewButton.textContent = "View Product";
+
+        viewButton.className =
+            "view-product-button";
+
+        viewButton.dataset.productId =
+            product.id;
+
+        viewButton.textContent =
+            "View Product";
 
         content.append(
             heading,
@@ -375,85 +619,151 @@ function renderProducts() {
             viewButton
         );
 
-        productCard.append(imageWrapper, content);
+        productCard.append(
+            imageWrapper,
+            content
+        );
+
         productsContainer.appendChild(productCard);
     });
 }
 
-// Search as the user types.
+// ========================================
+// SEARCH AS USER TYPES
+// ========================================
+
 if (searchInput) {
-    searchInput.addEventListener("input", renderProducts);
+    searchInput.addEventListener(
+        "input",
+        renderProducts
+    );
 }
 
+// ========================================
 // VIEW PRODUCT
+// ========================================
 
 if (productsContainer) {
-    productsContainer.addEventListener("click", (event) => {
-        const button = event.target.closest(".view-product-button");
 
-        if (!button) {
-            return;
+    productsContainer.addEventListener(
+        "click",
+        (event) => {
+
+            const button = event.target.closest(
+                ".view-product-button"
+            );
+
+            if (!button) {
+                return;
+            }
+
+            const productId =
+                button.dataset.productId;
+
+            if (!productId) {
+                console.error(
+                    "Product ID not found."
+                );
+                return;
+            }
+
+            // Guests can open product details too.
+            window.location.href =
+                `/product.html?id=${encodeURIComponent(productId)}`;
         }
-
-        const productId = button.dataset.productId;
-
-        if (!productId) {
-            console.error("Product ID not found.");
-            return;
-        }
-
-        // Guests can open product details too.
-        window.location.href =
-            `/product.html?id=${encodeURIComponent(productId)}`;
-    });
+    );
 }
 
+// ========================================
 // LOGOUT
+// ========================================
 
 if (logoutButton) {
-    logoutButton.addEventListener("click", async () => {
-        logoutButton.disabled = true;
 
-        try {
-            await signOut(auth);
+    logoutButton.addEventListener(
+        "click",
+        async () => {
 
-            // Remain on the home page after signing out.
-        } catch (error) {
-            console.error("Logout failed:", error);
-            logoutButton.disabled = false;
+            logoutButton.disabled = true;
+
+            try {
+                await signOut(auth);
+
+                // Remain on the home page after signing out.
+
+            } catch (error) {
+
+                console.error(
+                    "Logout failed:",
+                    error
+                );
+
+                logoutButton.disabled = false;
+            }
         }
-    });
+    );
 }
 
+// ========================================
 // EXPAND / COLLAPSE CATEGORY MENU
+// ========================================
 
 if (categoriesToggle && categoryMenu) {
-    categoriesToggle.addEventListener("click", () => {
-        const isOpen = !categoryMenu.hasAttribute("hidden");
 
-        if (isOpen) {
-            categoryMenu.setAttribute("hidden", "");
-            categoriesToggle.classList.remove("open");
+    categoriesToggle.addEventListener(
+        "click",
+        () => {
 
-            const label = categoriesToggle.querySelector("span");
-            if (label) {
-                label.textContent = "View";
+            const isOpen =
+                !categoryMenu.hasAttribute("hidden");
+
+            if (isOpen) {
+
+                categoryMenu.setAttribute(
+                    "hidden",
+                    ""
+                );
+
+                categoriesToggle.classList.remove(
+                    "open"
+                );
+
+                const label =
+                    categoriesToggle.querySelector("span");
+
+                if (label) {
+                    label.textContent = "View";
+                }
+
+                categoriesToggle.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+
+            } else {
+
+                categoryMenu.removeAttribute(
+                    "hidden"
+                );
+
+                categoriesToggle.classList.add(
+                    "open"
+                );
+
+                const label =
+                    categoriesToggle.querySelector("span");
+
+                if (label) {
+                    label.textContent = "Hide";
+                }
+
+                categoriesToggle.setAttribute(
+                    "aria-expanded",
+                    "true"
+                );
             }
-
-            categoriesToggle.setAttribute("aria-expanded", "false");
-
-        } else {
-            categoryMenu.removeAttribute("hidden");
-            categoriesToggle.classList.add("open");
-
-            const label = categoriesToggle.querySelector("span");
-            if (label) {
-                label.textContent = "Hide";
-            }
-
-            categoriesToggle.setAttribute("aria-expanded", "true");
         }
-    });
+    );
 }
 
 // ========================================
@@ -461,50 +771,88 @@ if (categoriesToggle && categoryMenu) {
 // ========================================
 
 function selectCategory(category) {
-    selectedCategory = normalizeCategory(category);
+
+    selectedCategory =
+        normalizeCategory(category);
 
     categoryIcons.forEach((button) => {
+
         button.classList.toggle(
             "active",
-            normalizeCategory(button.dataset.category) === selectedCategory
+            normalizeCategory(button.dataset.category) ===
+                selectedCategory
         );
     });
 
     categoryOptions.forEach((button) => {
+
         button.classList.toggle(
             "active",
-            normalizeCategory(button.dataset.category) === selectedCategory
+            normalizeCategory(button.dataset.category) ===
+                selectedCategory
         );
     });
 
     renderProducts();
 }
 
-// Compact category buttons.
+// ========================================
+// COMPACT CATEGORY BUTTONS
+// ========================================
+
 categoryIcons.forEach((button) => {
-    button.addEventListener("click", () => {
-        selectCategory(button.dataset.category);
-    });
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            selectCategory(
+                button.dataset.category
+            );
+        }
+    );
 });
 
-// Expanded category menu buttons.
+// ========================================
+// EXPANDED CATEGORY MENU BUTTONS
+// ========================================
+
 categoryOptions.forEach((button) => {
-    button.addEventListener("click", () => {
-        selectCategory(button.dataset.category);
 
-        if (categoryMenu) {
-            categoryMenu.setAttribute("hidden", "");
-        }
+    button.addEventListener(
+        "click",
+        () => {
 
-        if (categoriesToggle) {
-            categoriesToggle.classList.remove("open");
+            selectCategory(
+                button.dataset.category
+            );
 
-            const label = categoriesToggle.querySelector("span");
-            if (label) {
-                label.textContent = "View";
+            if (categoryMenu) {
+
+                categoryMenu.setAttribute(
+                    "hidden",
+                    ""
+                );
             }
 
-            categoriesToggle.setAttribute("aria-expanded", "false");
+            if (categoriesToggle) {
+
+                categoriesToggle.classList.remove(
+                    "open"
+                );
+
+                const label =
+                    categoriesToggle.querySelector("span");
+
+                if (label) {
+                    label.textContent = "View";
+                }
+
+                categoriesToggle.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+            }
         }
-    });
+    );
 });
