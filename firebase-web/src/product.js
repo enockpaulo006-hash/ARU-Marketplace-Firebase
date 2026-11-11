@@ -1,12 +1,12 @@
-
-import "./style.css";
+﻿import "./style.css";
 
 import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "./firebase";
+import { auth, db } from "./firebase.js";
 
 import {
     doc,
     getDoc,
+    getDocFromServer,
     addDoc,
     collection,
     serverTimestamp
@@ -38,6 +38,10 @@ const placeOrderButton = document.getElementById("place-order-button");
 const contactSellerButton = document.getElementById("contact-seller-button");
 const orderMessage = document.getElementById("order-message");
 
+const guestCheckoutFields = document.getElementById("guest-checkout-fields");
+const guestBuyerNameInput = document.getElementById("guest-buyer-name");
+const guestBuyerPhoneInput = document.getElementById("guest-buyer-phone");
+
 // --------------------------------------------------
 // STATE
 // --------------------------------------------------
@@ -57,13 +61,117 @@ const urlParams = new URLSearchParams(window.location.search);
 const productId = urlParams.get("id");
 
 // --------------------------------------------------
+// PRODUCT CACHE
+// Each product has its own cache entry.
+// --------------------------------------------------
+
+const PRODUCT_CACHE_PREFIX = "aru_marketplace_product_v1_";
+
+function getProductCacheKey(id) {
+    return `${PRODUCT_CACHE_PREFIX}${id}`;
+}
+
+function readCachedProduct(id) {
+    try {
+        // 1. Check the individual product cache first.
+        const individualRaw = localStorage.getItem(
+            getProductCacheKey(id)
+        );
+
+        if (individualRaw) {
+            try {
+                const cached = JSON.parse(individualRaw);
+
+                if (
+                    cached?.product &&
+                    cached.product.status === "active"
+                ) {
+                    return cached.product;
+                }
+            } catch (error) {
+                console.warn("Invalid individual product cache:", error);
+            }
+        }
+
+        // 2. Check the homepage products cache.
+        const homepageRaw = localStorage.getItem(
+            "aru_marketplace_active_products_v1"
+        );
+
+        if (!homepageRaw) return null;
+
+        const homepageCache = JSON.parse(homepageRaw);
+
+        if (!Array.isArray(homepageCache.products)) {
+            return null;
+        }
+
+        const product = homepageCache.products.find(
+            item =>
+                item &&
+                String(item.id) === String(id) &&
+                item.status === "active"
+        );
+
+        if (product) {
+            // 3. Save it in the individual cache for future visits.
+            saveProductCache(id, product);
+            return product;
+        }
+
+        return null;
+
+    } catch (error) {
+        console.warn("Could not read product cache:", error);
+        return null;
+    }
+}
+
+function saveProductCache(id, product) {
+    try {
+        localStorage.setItem(
+            getProductCacheKey(id),
+            JSON.stringify({
+                product,
+                savedAt: Date.now()
+            })
+        );
+
+    } catch (error) {
+        console.warn("Could not save product cache:", error);
+    }
+}
+
+function removeProductCache(id) {
+    try {
+        localStorage.removeItem(getProductCacheKey(id));
+    } catch (error) {
+        console.warn("Could not remove product cache:", error);
+    }
+}
+
+// --------------------------------------------------
+// ORDER / CONTACT MESSAGES
+// --------------------------------------------------
+
+function showOrderMessage(message, type = "error") {
+    if (!orderMessage) return;
+
+    orderMessage.textContent = message;
+    orderMessage.className = `order-message ${type}`;
+    orderMessage.style.display = "block";
+}
+
+// --------------------------------------------------
 // LOADING SCREEN
 // --------------------------------------------------
 
 function showProductLoader() {
     if (!loadingMessage) return;
 
-    loadingMessage.className = "products-loading product-page-loading";
+    loadingMessage.className =
+        "products-loading product-page-loading";
+
     loadingMessage.setAttribute("role", "status");
     loadingMessage.setAttribute("aria-label", "Loading product");
 
@@ -86,6 +194,7 @@ function showProductLoader() {
 
 function showProductError(message = "Unable to load this product.") {
     if (loadingMessage) loadingMessage.style.display = "none";
+
     if (productContent) productContent.style.display = "none";
 
     if (errorMessage) {
@@ -96,6 +205,7 @@ function showProductError(message = "Unable to load this product.") {
 
 function showProductContent() {
     if (loadingMessage) loadingMessage.style.display = "none";
+
     if (errorMessage) errorMessage.style.display = "none";
 
     if (productContent) {
@@ -139,7 +249,9 @@ function getSelectedPrice() {
 }
 
 function updateOrderTotal() {
-    if (!currentProduct || !quantityInput || !totalPriceElement) return;
+    if (!currentProduct || !quantityInput || !totalPriceElement) {
+        return;
+    }
 
     let quantity = Number.parseInt(quantityInput.value, 10);
 
@@ -196,19 +308,22 @@ function getOptimizedImageUrl(url, width = 1000) {
             remainingPath;
 
         return parsedUrl.toString();
+
     } catch {
         return url;
     }
 }
 
 // --------------------------------------------------
-// SHARED THREE-DOT LOADER FOR IMAGES
+// IMAGE LOADERS
 // --------------------------------------------------
 
 function createImageLoader(extraClass = "") {
     const loader = document.createElement("div");
 
-    loader.className = `product-image-placeholder ${extraClass}`.trim();
+    loader.className =
+        `product-image-placeholder ${extraClass}`.trim();
+
     loader.setAttribute("role", "status");
     loader.setAttribute("aria-label", "Loading image");
 
@@ -221,8 +336,12 @@ function createImageLoader(extraClass = "") {
     return loader;
 }
 
-function showUnavailableImage(container, message = "Image unavailable") {
+function showUnavailableImage(
+    container,
+    message = "Image unavailable"
+) {
     container.className = "no-product-image";
+
     container.innerHTML = `
         <i class="bi bi-image"></i>
         <span>${message}</span>
@@ -252,11 +371,16 @@ function displayProductImages() {
         selectedImageIndex = index;
 
         const image = document.createElement("img");
+
         image.id = "selected-product-image";
-        image.alt = currentProduct.title || `Product image ${index + 1}`;
+
+        image.alt =
+            currentProduct.title || `Product image ${index + 1}`;
+
         image.className = "product-image-loading";
         image.decoding = "async";
         image.loading = "eager";
+
         image.fetchPriority = index === 0 ? "high" : "auto";
 
         const loader = createImageLoader();
@@ -265,13 +389,16 @@ function displayProductImages() {
 
         image.addEventListener("load", () => {
             loader.remove();
+
             image.classList.remove("product-image-loading");
             image.classList.add("product-image-loaded");
+
         }, { once: true });
 
         image.addEventListener("error", () => {
             showUnavailableImage(loader);
             image.remove();
+
         }, { once: true });
 
         mainImage.appendChild(image);
@@ -280,12 +407,14 @@ function displayProductImages() {
 
         if (price !== null) {
             const priceLabel = document.createElement("div");
+
             priceLabel.className = "product-photo-price";
             priceLabel.textContent = formatPrice(price);
+
             mainImage.appendChild(priceLabel);
         }
 
-        image.src = getOptimizedImageUrl(imageUrls[index], 1000);
+        image.src = getOptimizedImageUrl(imageUrls[index], 800);
 
         thumbnails.querySelectorAll(".product-thumbnail").forEach(
             (thumbnail, thumbnailIndex) => {
@@ -305,19 +434,23 @@ function displayProductImages() {
 
     imageUrls.forEach((url, index) => {
         const thumbnail = document.createElement("button");
+
         thumbnail.type = "button";
         thumbnail.className = "product-thumbnail";
+
         thumbnail.setAttribute(
             "aria-label",
             `View product photo ${index + 1}`
         );
 
         const thumbnailWrapper = document.createElement("span");
+
         thumbnailWrapper.className = "product-thumbnail-image";
 
         const loader = createImageLoader("thumbnail-image-loader");
 
         const image = document.createElement("img");
+
         image.alt = `Product photo ${index + 1}`;
         image.loading = index === 0 ? "eager" : "lazy";
         image.decoding = "async";
@@ -325,11 +458,13 @@ function displayProductImages() {
         image.addEventListener("load", () => {
             loader.remove();
             image.classList.add("product-image-loaded");
+
         }, { once: true });
 
         image.addEventListener("error", () => {
             showUnavailableImage(loader, "Unavailable");
             image.remove();
+
         }, { once: true });
 
         thumbnailWrapper.append(loader, image);
@@ -341,8 +476,10 @@ function displayProductImages() {
 
         if (price !== null) {
             const label = document.createElement("span");
+
             label.className = "product-thumbnail-price";
             label.textContent = formatPrice(price);
+
             thumbnail.appendChild(label);
         }
 
@@ -357,72 +494,134 @@ function displayProductImages() {
 }
 
 // --------------------------------------------------
+// RENDER PRODUCT INFORMATION
+// --------------------------------------------------
+
+function renderProduct(product) {
+    currentProduct = product;
+    selectedImageIndex = 0;
+
+    if (productTitle) {
+        productTitle.textContent =
+            product.title || "Untitled Product";
+    }
+
+    if (productCategory) {
+        productCategory.textContent =
+            product.category || "Other";
+    }
+
+    if (productCondition) {
+        productCondition.textContent =
+            product.productCondition || "Not specified";
+    }
+
+    if (productLocation) {
+        productLocation.textContent =
+            product.location || "Not specified";
+    }
+
+    if (productDescription) {
+        productDescription.textContent =
+            product.description || "No description available.";
+    }
+
+    if (productPrice) {
+        productPrice.textContent =
+            formatPrice(getPhotoPrice(0) ?? product.price);
+    }
+
+    displayProductImages();
+    updateOrderTotal();
+
+    showProductContent();
+}
+
+// --------------------------------------------------
 // LOAD PRODUCT
+// CACHE FIRST + BACKGROUND REFRESH
 // --------------------------------------------------
 
 async function loadProduct() {
-    showProductLoader();
-
     if (!productId) {
         showProductError("Product link is missing its ID.");
         return;
     }
 
+    // STEP 1: Read cached product immediately.
+    const cachedProduct = readCachedProduct(productId);
+
+    const hasCachedProduct = Boolean(cachedProduct);
+
+    if (hasCachedProduct) {
+        renderProduct(cachedProduct);
+
+        console.log("Displayed cached product:", productId);
+
+    } else {
+        showProductLoader();
+    }
+
+    // STEP 2: Check Firestore server in the background.
     try {
-        const snapshot = await getDoc(doc(db, "products", productId));
+        const snapshot = await getDocFromServer(
+            doc(db, "products", productId)
+        );
 
         if (!snapshot.exists()) {
-            showProductError("This product could not be found.");
+            removeProductCache(productId);
+
+            showProductError(
+                "This product could not be found."
+            );
+
             return;
         }
 
-        const product = snapshot.data();
+        const freshProduct = snapshot.data();
 
-        if (product.status !== "active") {
-            showProductError("This product is no longer available.");
+        if (freshProduct.status !== "active") {
+            removeProductCache(productId);
+
+            showProductError(
+                "This product is no longer available."
+            );
+
             return;
         }
 
-        currentProduct = product;
-        selectedImageIndex = 0;
+        // STEP 3: Update local cache.
+        saveProductCache(productId, freshProduct);
 
-        if (productTitle) {
-            productTitle.textContent = product.title || "Untitled Product";
-        }
+        // STEP 4: Update product information quietly.
+        renderProduct(freshProduct);
 
-        if (productCategory) {
-            productCategory.textContent = product.category || "Other";
-        }
+        console.log(
+            "Product refreshed from Firestore:",
+            productId
+        );
 
-        if (productCondition) {
-            productCondition.textContent =
-                product.productCondition || "Not specified";
-        }
-
-        if (productLocation) {
-            productLocation.textContent = product.location || "Not specified";
-        }
-
-        if (productDescription) {
-            productDescription.textContent =
-                product.description || "No description available.";
-        }
-
-        if (productPrice) {
-            productPrice.textContent =
-                formatPrice(getPhotoPrice(0) ?? product.price);
-        }
-
-        displayProductImages();
-        updateOrderTotal();
-        showProductContent();
     } catch (error) {
-        console.error("Failed to load product:", error);
-        showProductError("Unable to load this product. Please try again.");
+        console.error(
+            "Failed to refresh product:",
+            error
+        );
+
+        if (hasCachedProduct) {
+            // Keep cached product visible when offline.
+            console.log(
+                "Using cached product while offline."
+            );
+
+        } else {
+            showProductError(
+                "Unable to load this product. Please check your connection and try again."
+            );
+        }
     }
 }
 
-// Start fetching product data immediately.
+// Load product immediately.
 loadProduct();
 
 // --------------------------------------------------
@@ -434,24 +633,30 @@ function normalizeTanzanianPhone(phone) {
 
     if (digits.startsWith("0")) {
         digits = "255" + digits.slice(1);
+
     } else if (!digits.startsWith("255")) {
         return null;
     }
 
     return /^255\d{9}$/.test(digits) ? digits : null;
 }
-
 // --------------------------------------------------
 // CONTACT SELLER THROUGH WHATSAPP
+// Login is NOT required to contact a seller.
 // --------------------------------------------------
 
 async function contactSeller() {
-    if (!authResolved || !currentUser || !currentProduct) {
-        showOrderMessage("Please wait until your account is ready.", "error");
+    if (!currentProduct) {
+        showOrderMessage("Product information is not ready yet.", "error");
         return;
     }
 
-    if (currentProduct.sellerId === currentUser.uid) {
+    if (!authResolved) {
+        showOrderMessage("Please wait a moment and try again.", "error");
+        return;
+    }
+
+    if (currentUser && currentProduct.sellerId === currentUser.uid) {
         showOrderMessage("This is your own product listing.", "error");
         return;
     }
@@ -468,22 +673,18 @@ async function contactSeller() {
     if (contactSellerButton) contactSellerButton.disabled = true;
 
     try {
-        const snapshot = await getDoc(
+        const snapshot = await getDocFromServer(
             doc(db, "sellerContacts", currentProduct.sellerId)
         );
 
         if (!snapshot.exists()) {
-            throw new Error(
-                "This seller has not added a WhatsApp contact yet."
-            );
+            throw new Error("This seller has not added a WhatsApp contact yet.");
         }
 
         const phone = normalizeTanzanianPhone(snapshot.data().whatsapp);
 
         if (!phone) {
-            throw new Error(
-                "The seller's WhatsApp number is missing or invalid."
-            );
+            throw new Error("The seller's WhatsApp number is missing or invalid.");
         }
 
         const message =
@@ -494,10 +695,8 @@ async function contactSeller() {
         whatsappWindow.location.href =
             `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
-        showOrderMessage(
-            "Opening WhatsApp to contact the seller...",
-            "success"
-        );
+        showOrderMessage("Opening WhatsApp to contact the seller...", "success");
+
     } catch (error) {
         whatsappWindow.close();
         console.error("Contact seller failed:", error);
@@ -506,6 +705,7 @@ async function contactSeller() {
             error.message || "Unable to contact this seller.",
             "error"
         );
+
     } finally {
         if (contactSellerButton) contactSellerButton.disabled = false;
     }
@@ -513,11 +713,18 @@ async function contactSeller() {
 
 // --------------------------------------------------
 // PLACE ORDER
+// Registered buyers use their account.
+// Guests can order using their name and phone number.
 // --------------------------------------------------
 
 async function placeOrder() {
-    if (!authResolved || !currentUser || !currentProduct || orderInProgress) {
-        showOrderMessage("Please wait until your account is ready.", "error");
+    if (!currentProduct || orderInProgress) {
+        showOrderMessage("Product information is not ready yet.", "error");
+        return;
+    }
+
+    if (!authResolved) {
+        showOrderMessage("Please wait a moment and try again.", "error");
         return;
     }
 
@@ -526,17 +733,43 @@ async function placeOrder() {
         return;
     }
 
-    if (currentProduct.sellerId === currentUser.uid) {
-        showOrderMessage(
-            "You cannot place an order for your own product.",
-            "error"
-        );
+    if (currentUser && currentProduct.sellerId === currentUser.uid) {
+        showOrderMessage("You cannot place an order for your own product.", "error");
         return;
     }
 
     if (currentProduct.status !== "active") {
         showOrderMessage("This product is no longer available.", "error");
         return;
+    }
+
+    let buyerName = "";
+    let buyerPhone = "";
+
+    if (!currentUser) {
+        buyerName = guestBuyerNameInput?.value.trim() || "";
+        buyerPhone = normalizeTanzanianPhone(guestBuyerPhoneInput?.value);
+
+        if (!buyerName) {
+            showOrderMessage("Please enter your full name.", "error");
+            guestBuyerNameInput?.focus();
+            return;
+        }
+
+        if (buyerName.length > 80) {
+            showOrderMessage("Your name must not exceed 80 characters.", "error");
+            guestBuyerNameInput?.focus();
+            return;
+        }
+
+        if (!buyerPhone) {
+            showOrderMessage(
+                "Enter a valid Tanzanian phone number, for example 07XXXXXXXX.",
+                "error"
+            );
+            guestBuyerPhoneInput?.focus();
+            return;
+        }
     }
 
     const quantity = Number.parseInt(quantityInput?.value, 10);
@@ -569,7 +802,9 @@ async function placeOrder() {
     }
 
     try {
-        const latestSnapshot = await getDoc(doc(db, "products", productId));
+        const latestSnapshot = await getDocFromServer(
+            doc(db, "products", productId)
+        );
 
         if (!latestSnapshot.exists()) {
             throw new Error("This product is no longer available.");
@@ -597,14 +832,14 @@ async function placeOrder() {
             );
         }
 
-        if (latestProduct.sellerId === currentUser.uid) {
+        if (currentUser && latestProduct.sellerId === currentUser.uid) {
             throw new Error("You cannot order your own product.");
         }
 
         const imageUrls = latestProduct.imageUrls || [];
 
-        await addDoc(collection(db, "orders"), {
-            buyerId: currentUser.uid,
+        const orderData = {
+            buyerId: currentUser ? currentUser.uid : "",
             sellerId: latestProduct.sellerId,
             productId,
             productTitle: latestProduct.title || "Product",
@@ -616,10 +851,19 @@ async function placeOrder() {
             status: "pending",
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp()
-        });
+        };
+
+        if (!currentUser) {
+            orderData.buyerName = buyerName;
+            orderData.buyerPhone = buyerPhone;
+        }
+
+        await addDoc(collection(db, "orders"), orderData);
 
         showOrderMessage(
-            "Order placed successfully! You can track it in Orders.",
+            currentUser
+                ? "Order placed successfully! You can track it in Orders."
+                : "Order placed successfully! The seller can contact you using the phone number you provided.",
             "success"
         );
 
@@ -628,6 +872,7 @@ async function placeOrder() {
                 '<i class="bi bi-check-circle"></i> Order Placed';
             placeOrderButton.disabled = true;
         }
+
     } catch (error) {
         console.error("Failed to place order:", error);
 
@@ -641,41 +886,73 @@ async function placeOrder() {
             placeOrderButton.innerHTML =
                 '<i class="bi bi-bag-check"></i> Place Order';
         }
+
     } finally {
         orderInProgress = false;
     }
 }
-
+// --------------------------------------------------
 // QUANTITY CONTROLS
+// --------------------------------------------------
+
 decreaseQuantityButton?.addEventListener("click", () => {
     const quantity = Number.parseInt(quantityInput.value, 10) || 1;
-    quantityInput.value = String(Math.max(1, quantity - 1));
+
+    quantityInput.value = String(
+        Math.max(1, quantity - 1)
+    );
+
     updateOrderTotal();
 });
 
 increaseQuantityButton?.addEventListener("click", () => {
     const quantity = Number.parseInt(quantityInput.value, 10) || 1;
-    quantityInput.value = String(Math.min(99, quantity + 1));
+
+    quantityInput.value = String(
+        Math.min(99, quantity + 1)
+    );
+
     updateOrderTotal();
 });
 
-quantityInput?.addEventListener("input", updateOrderTotal);
-placeOrderButton?.addEventListener("click", placeOrder);
-contactSellerButton?.addEventListener("click", contactSeller);
+quantityInput?.addEventListener(
+    "input",
+    updateOrderTotal
+);
 
+placeOrderButton?.addEventListener(
+    "click",
+    placeOrder
+);
+
+contactSellerButton?.addEventListener(
+    "click",
+    contactSeller
+);
+
+// --------------------------------------------------
 // AUTHENTICATION
+// Product viewing, seller contact, and guest checkout
+// do not require a signed-in account.
+// --------------------------------------------------
+
 onAuthStateChanged(auth, async (user) => {
     currentUser = user || null;
     isModerator = false;
     authResolved = true;
 
+    if (guestCheckoutFields) {
+        guestCheckoutFields.hidden = Boolean(user);
+    }
+
     if (!user) {
-        window.location.replace("/login.html");
         return;
     }
 
     try {
-        const adminSnapshot = await getDoc(doc(db, "admins", user.uid));
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
 
         isModerator =
             adminSnapshot.exists() &&
@@ -691,6 +968,7 @@ onAuthStateChanged(auth, async (user) => {
                 "error"
             );
         }
+
     } catch (error) {
         console.error("Account check failed:", error);
 
