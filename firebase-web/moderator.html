@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <meta name="theme-color" content="#065597">
-    <meta name="description" content="Review and moderate ARU Marketplace product submissions.">
+    <meta name="description" content="ARU Marketplace moderator dashboard.">
 
-    <title>Product Review | ARU Marketplace</title>
+    <title>Moderator Dashboard | ARU Marketplace</title>
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -18,119 +19,411 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
         rel="stylesheet"
     >
+
+    <style>
+        body {
+            background: #f5f7fa;
+            color: #202938;
+        }
+
+        .my-products-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 5%;
+            background: #065597;
+            color: white;
+        }
+
+        .my-products-header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .my-products-header p {
+            margin: 3px 0 0;
+            opacity: .85;
+        }
+
+        .back-link {
+            color: white;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+
+        .my-products-main {
+            width: min(1100px, 94%);
+            margin: 25px auto;
+        }
+
+        .my-products-summary,
+        .moderator-search,
+        .moderator-orders-search {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        }
+
+        .my-products-summary h2 {
+            font-size: 1.3rem;
+        }
+
+        .product-count {
+            color: #065597;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .moderator-search label,
+        .moderator-orders-search label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .moderator-search input,
+        .moderator-orders-search input {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+        }
+
+        .moderator-tabs,
+        .moderator-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 18px 0;
+        }
+
+        .moderator-tab,
+        .product-filter,
+        .order-filter {
+            border: 1px solid #d5dce5;
+            background: white;
+            color: #263445;
+            border-radius: 8px;
+            padding: 9px 15px;
+        }
+
+        .moderator-tab.active,
+        .product-filter.active,
+        .order-filter.active {
+            background: #065597;
+            border-color: #065597;
+            color: white;
+        }
+
+        .my-product-card,
+        .moderator-order-card {
+            display: flex;
+            gap: 16px;
+            background: white;
+            padding: 16px;
+            margin-bottom: 14px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,.04);
+        }
+
+        .my-product-image {
+            width: 150px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #eee;
+        }
+
+        .my-product-details {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .my-product-details h3 {
+            font-size: 1.1rem;
+        }
+
+        .my-product-price {
+            color: #065597;
+            font-weight: 700;
+        }
+
+        .my-product-date {
+            color: #687586;
+            font-size: .9rem;
+            overflow-wrap: anywhere;
+        }
+
+        .my-product-status,
+        .order-status {
+            display: inline-block;
+            padding: 4px 9px;
+            border-radius: 20px;
+            font-size: .8rem;
+            font-weight: 600;
+            background: #e9ecef;
+            margin: 4px 0;
+        }
+
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-active,
+        .status-completed { background: #d1e7dd; color: #0f5132; }
+        .status-rejected,
+        .status-cancelled { background: #f8d7da; color: #842029; }
+        .status-accepted { background: #cfe2ff; color: #084298; }
+
+        .my-product-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .my-product-edit-button,
+        .my-product-delete-button {
+            border: 0;
+            border-radius: 7px;
+            padding: 8px 13px;
+            color: white;
+        }
+
+        .my-product-edit-button { background: #198754; }
+        .my-product-delete-button { background: #dc3545; }
+
+        .my-product-rejection {
+            color: #b02a37;
+            overflow-wrap: anywhere;
+        }
+
+        .moderator-order-card {
+            display: block;
+        }
+
+        .order-card-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .order-card-heading h3 {
+            font-size: 1.05rem;
+            margin: 0;
+        }
+
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .order-detail {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .order-detail small {
+            display: block;
+            color: #687586;
+            margin-bottom: 3px;
+        }
+
+        .order-detail strong {
+            font-weight: 600;
+        }
+
+        .moderator-refresh {
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .my-products-message {
+            background: white;
+            padding: 22px;
+            border-radius: 10px;
+            text-align: center;
+            color: #687586;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        @media (max-width: 600px) {
+            .my-product-card {
+                display: block;
+            }
+
+            .my-product-image {
+                width: 100%;
+                height: 190px;
+                margin-bottom: 12px;
+            }
+
+            .order-details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 
 <body>
     <header class="my-products-header">
-        <a
-            href="/home.html"
-            class="back-link"
-            aria-label="Back to marketplace"
-        >
+        <a href="/home.html" class="back-link" aria-label="Back to marketplace">
             <i class="bi bi-arrow-left"></i>
         </a>
 
         <div>
-            <h1>Product Review</h1>
-            <p>ARU Marketplace Moderator</p>
+            <h1>Moderator Dashboard</h1>
+            <p>ARU Marketplace</p>
         </div>
     </header>
 
     <main class="my-products-main">
-        <section
-            class="my-products-summary"
-            aria-labelledby="review-heading"
-        >
-            <h2 id="review-heading">Review Products</h2>
 
-            <p>
-                Review seller submissions and approve or reject
-                
-            </p>
-
-            <div
-                id="moderator-count"
-                class="product-count"
-                aria-live="polite"
-            >
-                Loading products
+        <section class="my-products-summary">
+            <h2>Marketplace Management</h2>
+            <p>Review product submissions and monitor marketplace orders.</p>
+            <div id="moderator-count" class="product-count" aria-live="polite">
+                Loading products...
             </div>
         </section>
 
-        <section class="moderator-search" aria-label="Search products">
-            <label for="moderator-search-input">
-                Search products or seller UID
-            </label>
-
-            <input
-                id="moderator-search-input"
-                type="search"
-                placeholder="Search title, category, or seller UID"
-                autocomplete="off"
-            >
-        </section>
-
-        <nav
-            class="moderator-filters"
-            aria-label="Filter products by status"
-        >
+        <nav class="moderator-tabs" aria-label="Moderator dashboard sections">
             <button
                 type="button"
-                class="product-filter active"
-                data-status="pending"
+                class="moderator-tab active"
+                data-section="products"
                 aria-pressed="true"
             >
-                Pending
+                <i class="bi bi-box-seam"></i> Products
             </button>
 
             <button
                 type="button"
-                class="product-filter"
-                data-status="active"
+                class="moderator-tab"
+                data-section="orders"
                 aria-pressed="false"
             >
-                Approved
-            </button>
-
-            <button
-                type="button"
-                class="product-filter"
-                data-status="rejected"
-                aria-pressed="false"
-            >
-                Rejected
-            </button>
-
-            <button
-                type="button"
-                class="product-filter"
-                data-status="all"
-                aria-pressed="false"
-            >
-                All
+                <i class="bi bi-receipt"></i> Orders
             </button>
         </nav>
 
-        <section
-            id="moderator-products-list"
-            class="my-products-list"
-            aria-label="Products for review"
-            aria-live="polite"
-            aria-busy="true"
-        >
-            <p class="my-products-message">Loading products...</p>
+        <!-- PRODUCTS SECTION -->
+        <section id="moderator-products-section">
+            <section class="moderator-search">
+                <label for="moderator-search-input">
+                    Search products or seller UID
+                </label>
+
+                <input
+                    id="moderator-search-input"
+                    type="search"
+                    placeholder="Search title, category, or seller UID"
+                    autocomplete="off"
+                >
+            </section>
+
+            <nav class="moderator-filters" aria-label="Filter products">
+                <button type="button" class="product-filter active"
+                    data-status="pending" aria-pressed="true">Pending</button>
+
+                <button type="button" class="product-filter"
+                    data-status="active" aria-pressed="false">Approved</button>
+
+                <button type="button" class="product-filter"
+                    data-status="rejected" aria-pressed="false">Rejected</button>
+
+                <button type="button" class="product-filter"
+                    data-status="all" aria-pressed="false">All</button>
+            </nav>
+
+            <section
+                id="moderator-products-list"
+                aria-label="Products for review"
+                aria-live="polite"
+                aria-busy="true"
+            >
+                <p class="my-products-message">Loading products...</p>
+            </section>
+
+            <div class="moderator-refresh">
+                <button type="button" id="moderator-refresh-button"
+                    class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh products
+                </button>
+            </div>
         </section>
 
-        <div class="moderator-refresh">
-            <button
-                type="button"
-                id="moderator-refresh-button"
-                class="btn btn-outline-primary"
+        <!-- ORDERS SECTION -->
+        <section id="moderator-orders-section" hidden>
+            <section class="my-products-summary">
+                <h2>All Marketplace Orders</h2>
+                <p>
+                    Read-only view of orders placed across all sellers.
+                    Orders cannot be edited or deleted here.
+                </p>
+                <div id="moderator-orders-count" class="product-count">
+                    Orders have not been loaded yet.
+                </div>
+            </section>
+
+            <section class="moderator-orders-search">
+                <label for="moderator-orders-search-input">
+                    Search orders
+                </label>
+
+                <input
+                    id="moderator-orders-search-input"
+                    type="search"
+                    placeholder="Search customer, phone, product, seller or order ID"
+                    autocomplete="off"
+                >
+            </section>
+
+            <nav class="moderator-filters" aria-label="Filter orders">
+                <button type="button" class="order-filter active"
+                    data-order-status="all" aria-pressed="true">All</button>
+
+                <button type="button" class="order-filter"
+                    data-order-status="pending" aria-pressed="false">Pending</button>
+
+                <button type="button" class="order-filter"
+                    data-order-status="accepted" aria-pressed="false">Accepted</button>
+
+                <button type="button" class="order-filter"
+                    data-order-status="rejected" aria-pressed="false">Rejected</button>
+
+                <button type="button" class="order-filter"
+                    data-order-status="completed" aria-pressed="false">Completed</button>
+
+                <button type="button" class="order-filter"
+                    data-order-status="cancelled" aria-pressed="false">Cancelled</button>
+            </nav>
+
+            <section
+                id="moderator-orders-list"
+                aria-label="All marketplace orders"
+                aria-live="polite"
+                aria-busy="false"
             >
-                <i class="bi bi-arrow-clockwise"></i>
-                Refresh products
-            </button>
-        </div>
+                <p class="my-products-message">
+                    Open this section to load orders.
+                </p>
+            </section>
+
+            <div class="moderator-refresh">
+                <button type="button" id="moderator-orders-refresh-button"
+                    class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh orders
+                </button>
+            </div>
+        </section>
+
     </main>
 
     <script type="module" src="/src/moderator.js"></script>
