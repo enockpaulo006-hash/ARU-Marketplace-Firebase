@@ -114,10 +114,13 @@ service cloud.firestore {
         )
       );
 
-      allow delete: if request.auth != null
-        && !isAdmin()
-        && resource.data.sellerId == request.auth.uid
-        && resource.data.status != "sold";
+      allow delete: if isAdmin()
+        || (
+          request.auth != null
+          && !isAdmin()
+          && resource.data.sellerId == request.auth.uid
+          && resource.data.status != "sold"
+        );
     }
 
     match /orders/{orderId} {
