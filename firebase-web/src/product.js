@@ -1,3 +1,4 @@
+﻿
 import "./style.css";
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -73,7 +74,6 @@ function getProductCacheKey(id) {
 
 function readCachedProduct(id) {
     try {
-        // 1. Check the individual product cache first.
         const individualRaw = localStorage.getItem(
             getProductCacheKey(id)
         );
@@ -93,7 +93,6 @@ function readCachedProduct(id) {
             }
         }
 
-        // 2. Check the homepage products cache.
         const homepageRaw = localStorage.getItem(
             "aru_marketplace_active_products_v1"
         );
@@ -114,7 +113,6 @@ function readCachedProduct(id) {
         );
 
         if (product) {
-            // 3. Save it in the individual cache for future visits.
             saveProductCache(id, product);
             return product;
         }
@@ -297,7 +295,6 @@ function getOptimizedImageUrl(url, width = 1000) {
 
         const firstSegment = remainingPath.split("/")[0];
 
-        // Do not add a second transformation to an already transformed URL.
         if (/^(w_|h_|c_|f_auto|q_auto|q_[0-9])/.test(firstSegment)) {
             return url;
         }
@@ -548,7 +545,6 @@ async function loadProduct() {
         return;
     }
 
-    // STEP 1: Read cached product immediately.
     const cachedProduct = readCachedProduct(productId);
 
     const hasCachedProduct = Boolean(cachedProduct);
@@ -562,7 +558,6 @@ async function loadProduct() {
         showProductLoader();
     }
 
-    // STEP 2: Check Firestore server in the background.
     try {
         const snapshot = await getDocFromServer(
             doc(db, "products", productId)
@@ -590,10 +585,8 @@ async function loadProduct() {
             return;
         }
 
-        // STEP 3: Update local cache.
         saveProductCache(productId, freshProduct);
 
-        // STEP 4: Update product information quietly.
         renderProduct(freshProduct);
 
         console.log(
@@ -608,7 +601,6 @@ async function loadProduct() {
         );
 
         if (hasCachedProduct) {
-            // Keep cached product visible when offline.
             console.log(
                 "Using cached product while offline."
             );
@@ -631,14 +623,13 @@ loadProduct();
 function normalizeTanzanianPhone(phone) {
     const digits = String(phone || "").trim();
 
-    // Require exactly 10 digits beginning with 06 or 07.
     if (!/^0[67]\d{8}$/.test(digits)) {
         return null;
     }
 
-    // Store in international format for WhatsApp.
     return "255" + digits.slice(1);
 }
+
 // --------------------------------------------------
 // CONTACT SELLER THROUGH WHATSAPP
 // Login is NOT required to contact a seller.
@@ -712,8 +703,7 @@ async function contactSeller() {
 
 // --------------------------------------------------
 // PLACE ORDER
-// Registered buyers use their account.
-// Guests can order using their name and phone number.
+// Registered buyers and guests can place orders.
 // --------------------------------------------------
 
 async function placeOrder() {
@@ -836,8 +826,8 @@ async function placeOrder() {
 
         const orderData = {
             buyerId: currentUser ? currentUser.uid : "",
-            buyerName: buyerName,
-            buyerPhone: buyerPhone,
+            buyerName,
+            buyerPhone,
             sellerId: latestProduct.sellerId,
             productId,
             productTitle: latestProduct.title || "Product",
@@ -851,17 +841,42 @@ async function placeOrder() {
             updatedAt: serverTimestamp()
         };
 
+        const createdOrder = await addDoc(
+            collection(db, "orders"),
+            orderData
+        );
+
+        // Remember the guest order ID in this browser.
         if (!currentUser) {
-            orderData.buyerName = buyerName;
-            orderData.buyerPhone = buyerPhone;
+            const storageKey = "aru_marketplace_guest_order_ids_v1";
+
+            try {
+                const savedIds = JSON.parse(
+                    localStorage.getItem(storageKey) || "[]"
+                );
+
+                const orderIds = Array.isArray(savedIds) ? savedIds : [];
+
+                if (!orderIds.includes(createdOrder.id)) {
+                    orderIds.unshift(createdOrder.id);
+                }
+
+                localStorage.setItem(
+                    storageKey,
+                    JSON.stringify(orderIds.slice(0, 100))
+                );
+
+            } catch (storageError) {
+                console.error("Could not save guest order history:", storageError);
+
+                throw new Error(
+                    "Your order was placed, but this browser could not save its tracking details. Please do not place it again."
+                );
+            }
         }
 
-        await addDoc(collection(db, "orders"), orderData);
-
         showOrderMessage(
-            currentUser
-                ? "Order placed successfully! You can track it in Orders."
-                : "Order placed successfully! The seller can contact you using the phone number you provided.",
+            "Order placed successfully! Open Orders to follow its progress.",
             "success"
         );
 
@@ -889,6 +904,7 @@ async function placeOrder() {
         orderInProgress = false;
     }
 }
+
 // --------------------------------------------------
 // QUANTITY CONTROLS
 // --------------------------------------------------
@@ -930,8 +946,7 @@ contactSellerButton?.addEventListener(
 
 // --------------------------------------------------
 // AUTHENTICATION
-// Product viewing, seller contact, and guest checkout
-// do not require a signed-in account.
+// Product viewing and guest checkout do not require login.
 // --------------------------------------------------
 
 onAuthStateChanged(auth, async (user) => {
