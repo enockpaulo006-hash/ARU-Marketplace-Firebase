@@ -1,3 +1,4 @@
+
 import "./style.css";
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -8,13 +9,13 @@ import {
     doc,
     getDoc,
     updateDoc,
+    deleteDoc,
     serverTimestamp
 } from "firebase/firestore";
 
 import { auth, db } from "./firebase.js";
 
 // PAGE ELEMENTS
-
 const list = document.getElementById("moderator-products-list");
 const count = document.getElementById("moderator-count");
 const searchInput = document.getElementById("moderator-search-input");
@@ -26,7 +27,7 @@ let selectedStatus = "pending";
 let authorized = false;
 let loading = false;
 
-// Ensure the expected HTML elements exist.
+// INITIALIZE
 if (!list || !count || !searchInput) {
     console.error(
         "Moderator dashboard elements are missing. Check moderator.html IDs."
@@ -56,6 +57,7 @@ function initializeModeratorDashboard() {
                 showMessage(
                     "Access denied. This account is not an authorized moderator."
                 );
+
                 count.textContent = "Moderator access required";
                 return;
             }
@@ -65,6 +67,7 @@ function initializeModeratorDashboard() {
             console.log("Moderator authorized:", user.uid);
 
             await loadProducts();
+
         } catch (error) {
             console.error("Moderator authorization failed:", error);
 
@@ -78,7 +81,7 @@ function initializeModeratorDashboard() {
         }
     });
 
-    // Status filters.
+    // STATUS FILTERS
     filterButtons.forEach((button) => {
         button.addEventListener("click", () => {
             selectedStatus = button.dataset.status || "pending";
@@ -94,10 +97,10 @@ function initializeModeratorDashboard() {
         });
     });
 
-    // Search by title, category, seller UID, or location.
+    // SEARCH
     searchInput.addEventListener("input", renderProducts);
 
-    // Manually refresh the product queue.
+    // REFRESH
     if (refreshButton) {
         refreshButton.addEventListener("click", loadProducts);
     }
@@ -133,7 +136,6 @@ async function loadProducts() {
     showMessage("Loading products...");
 
     try {
-        // The moderator's Firestore rules must permit reading products.
         const snapshot = await getDocs(collection(db, "products"));
 
         products = snapshot.docs.map((item) => ({
@@ -141,7 +143,7 @@ async function loadProducts() {
             ...item.data()
         }));
 
-        // Sort the most recently submitted products first.
+        // Sort newest products first.
         products.sort((a, b) => {
             const dateA = a.createdAt?.toMillis?.() ?? 0;
             const dateB = b.createdAt?.toMillis?.() ?? 0;
@@ -161,6 +163,7 @@ async function loadProducts() {
         );
 
         renderProducts();
+
     } catch (error) {
         console.error("Could not load moderator products:", error);
 
@@ -171,6 +174,7 @@ async function loadProducts() {
         );
 
         count.textContent = "Product loading failed";
+
     } finally {
         loading = false;
 
@@ -185,7 +189,6 @@ async function loadProducts() {
 }
 
 // FILTER AND SEARCH PRODUCTS
-
 function renderProducts() {
     if (!list || !count || !searchInput) return;
 
@@ -222,6 +225,7 @@ function renderProducts() {
                 ? "No products are waiting for review."
                 : "No products match this filter or search."
         );
+
         return;
     }
 
@@ -230,7 +234,7 @@ function renderProducts() {
     });
 }
 
-// CREATE A PRODUCT CARD
+// CREATE PRODUCT CARD
 function createProductCard(product) {
     const card = document.createElement("article");
     card.className = "my-product-card";
@@ -278,7 +282,8 @@ function createProductCard(product) {
 
     const seller = document.createElement("p");
     seller.className = "my-product-date";
-    seller.textContent = `Seller UID: ${product.sellerId || "Unknown"}`;
+    seller.textContent =
+        `Seller UID: ${product.sellerId || "Unknown"}`;
 
     const submitted = document.createElement("p");
     submitted.className = "my-product-date";
@@ -291,7 +296,7 @@ function createProductCard(product) {
 
     details.append(title, price, status, seller, submitted);
 
-    // Show rejection reason when a product has been rejected.
+    // SHOW REJECTION REASON
     if (product.status === "rejected" && product.rejectionReason) {
         const reason = document.createElement("p");
         reason.className = "my-product-rejection";
@@ -301,7 +306,7 @@ function createProductCard(product) {
         details.appendChild(reason);
     }
 
-    // Only pending products have review buttons.
+    // APPROVAL AND REJECTION BUTTONS
     if (product.status === "pending") {
         const actions = document.createElement("div");
         actions.className = "my-product-actions";
@@ -328,11 +333,22 @@ function createProductCard(product) {
         details.appendChild(actions);
     }
 
+    // DELETE BUTTON FOR ALL PRODUCT STATUSES
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "my-product-delete-button";
+    deleteButton.textContent = "Delete Product";
+
+    deleteButton.addEventListener("click", () => {
+        deleteProduct(product);
+    });
+
+    details.appendChild(deleteButton);
+
     card.append(image, details);
 
     return card;
 }
-
 
 // APPROVE OR REJECT A PRODUCT
 async function reviewProduct(
@@ -365,7 +381,6 @@ async function reviewProduct(
             return;
         }
 
-        // Prevent reviewing a product that has already been reviewed.
         if (latestSnapshot.data().status !== "pending") {
             alert(
                 "This product is no longer pending review. Refreshing the list."
@@ -391,6 +406,7 @@ async function reviewProduct(
         );
 
         await loadProducts();
+
     } catch (error) {
         console.error("Product review failed:", error);
 
@@ -401,7 +417,6 @@ async function reviewProduct(
         );
     }
 }
-
 
 // REJECT WITH A REASON
 async function rejectProduct(product) {
@@ -417,4 +432,87 @@ async function rejectProduct(product) {
     }
 
     await reviewProduct(product, "rejected", reason.trim());
+}
+
+// DELETE A PRODUCT WITH DIAGNOSTICS
+async function deleteProduct(product) {
+    if (!authorized || !auth.currentUser) {
+        alert("You are not authorized to delete products.");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Are you sure you want to permanently delete "${product.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    let stage = "Checking moderator account";
+
+    try {
+        const user = auth.currentUser;
+
+        console.log("Moderator UID:", user.uid);
+
+        // Verify the actual moderator document.
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
+
+        console.log(
+            "Moderator admin document:",
+            adminSnapshot.exists()
+                ? adminSnapshot.data()
+                : "Not found"
+        );
+
+        if (
+            !adminSnapshot.exists() ||
+            adminSnapshot.data().role !== "ADMIN"
+        ) {
+            throw new Error("Moderator role is not ADMIN.");
+        }
+
+        // Verify the product still exists.
+        stage = "Checking product";
+
+        const productRef = doc(db, "products", product.id);
+        const latestSnapshot = await getDoc(productRef);
+
+        if (!latestSnapshot.exists()) {
+            alert("This product no longer exists.");
+            await loadProducts();
+            return;
+        }
+
+        console.log("Product to delete:", {
+            id: product.id,
+            title: latestSnapshot.data().title,
+            status: latestSnapshot.data().status
+        });
+
+        // Attempt deletion.
+        stage = "Deleting product";
+
+        await deleteDoc(productRef);
+
+        // Update the dashboard without another full query.
+        products = products.filter(
+            (item) => item.id !== product.id
+        );
+
+        alert("Product deleted successfully.");
+
+        renderProducts();
+
+    } catch (error) {
+        console.error("Deletion failed at:", stage);
+        console.error("Error code:", error.code);
+        console.error("Full error:", error);
+
+        alert(
+            `Deletion failed at: ${stage}\n` +
+            `Error: ${error.code || error.message || "Unknown error"}`
+        );
+    }
 }
