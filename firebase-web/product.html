@@ -159,7 +159,7 @@
                                 id="decrease-quantity"
                                 aria-label="Decrease quantity"
                             >
-                                −
+                                âˆ’
                             </button>
 
                             <input
@@ -236,7 +236,10 @@
                                 id="guest-buyer-phone"
                                 name="buyerPhone"
                                 placeholder="07XXXXXXXX"
-                                maxlength="13"
+                                maxlength="10"
+                                minlength="10"
+                                pattern="0[67][0-9]{8}"
+                                required
                                 inputmode="tel"
                                 autocomplete="tel"
                             >
