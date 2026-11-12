@@ -9,6 +9,16 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    <meta
+        name="theme-color"
+        content="#065597"
+    >
+
+    <meta
+        name="description"
+        content="View products and place orders on ARU Marketplace."
+    >
+
     <title>Product Details - ARU Marketplace</title>
 
     <!-- Bootstrap Icons -->
@@ -49,12 +59,14 @@
     <!-- PRODUCT DETAILS -->
     <main class="product-details-page">
 
+        <!-- LOADING -->
         <div id="product-loading" class="product-loading">
             <i class="bi bi-arrow-repeat"></i>
             <p>Loading product...</p>
         </div>
 
 
+        <!-- ERROR -->
         <div
             id="product-error"
             class="product-error"
@@ -77,6 +89,7 @@
         </div>
 
 
+        <!-- PRODUCT CONTENT -->
         <section
             id="product-content"
             class="product-content"
@@ -115,42 +128,54 @@
                 ></p>
 
 
+                <!-- PRODUCT DETAILS -->
                 <div class="product-detail-info">
 
                     <div class="detail-item">
+
                         <i class="bi bi-tag"></i>
 
                         <div>
                             <span>Condition</span>
                             <strong id="product-condition"></strong>
                         </div>
+
                     </div>
 
 
                     <div class="detail-item">
+
                         <i class="bi bi-geo-alt"></i>
 
                         <div>
                             <span>Location</span>
                             <strong id="product-location"></strong>
                         </div>
+
                     </div>
 
                 </div>
 
 
+                <!-- DESCRIPTION -->
                 <div class="product-description-section">
+
                     <h2>Description</h2>
+
                     <p id="product-description"></p>
+
                 </div>
 
 
                 <!-- PRODUCT ACTIONS -->
                 <div class="product-actions">
 
+                    <!-- QUANTITY -->
                     <div class="order-quantity-section">
 
-                        <label for="order-quantity">Quantity</label>
+                        <label for="order-quantity">
+                            Quantity
+                        </label>
 
                         <div class="quantity-control">
 
@@ -159,7 +184,7 @@
                                 id="decrease-quantity"
                                 aria-label="Decrease quantity"
                             >
-                                âˆ’
+                                −
                             </button>
 
                             <input
@@ -184,29 +209,31 @@
 
                         <p class="order-total">
                             Total:
-                            <strong id="order-total-price">TZS 0</strong>
+                            <strong id="order-total-price">
+                                TZS 0
+                            </strong>
                         </p>
 
                     </div>
 
 
-                    <!-- GUEST CUSTOMER DETAILS -->
-                    <!-- JavaScript will show this section only
-                         when the customer is not logged in. -->
+                    <!-- CUSTOMER DETAILS -->
+                    <!-- No login or registration required. -->
 
                     <div
                         id="guest-checkout-fields"
                         class="guest-checkout-fields"
-                        hidden
                     >
 
                         <h3>Customer Details</h3>
 
                         <p>
-                            You can place your order without creating
-                            an account. Enter your details below.
+                            You do not need an account to order.
+                            Enter your details below and place your order.
                         </p>
 
+
+                        <!-- CUSTOMER NAME -->
                         <div class="form-group">
 
                             <label for="guest-buyer-name">
@@ -220,11 +247,13 @@
                                 placeholder="Enter your full name"
                                 maxlength="80"
                                 autocomplete="name"
+                                required
                             >
 
                         </div>
 
 
+                        <!-- CUSTOMER PHONE -->
                         <div class="form-group">
 
                             <label for="guest-buyer-phone">
@@ -239,36 +268,49 @@
                                 maxlength="10"
                                 minlength="10"
                                 pattern="0[67][0-9]{8}"
-                                required
-                                inputmode="tel"
+                                inputmode="numeric"
                                 autocomplete="tel"
+                                required
                             >
+
+                            <small>
+                                Enter 10 digits starting with 06 or 07.
+                            </small>
 
                         </div>
 
                     </div>
 
 
+                    <!-- PLACE ORDER -->
                     <button
                         type="button"
                         id="place-order-button"
                         class="place-order-button"
                     >
+
                         <i class="bi bi-bag-check"></i>
+
                         Place Order
+
                     </button>
 
 
+                    <!-- CONTACT SELLER -->
                     <button
                         type="button"
                         id="contact-seller-button"
                         class="contact-seller-button"
                     >
+
                         <i class="bi bi-chat-dots"></i>
+
                         Contact Seller
+
                     </button>
 
 
+                    <!-- ORDER MESSAGE -->
                     <p
                         id="order-message"
                         class="order-message"
@@ -289,23 +331,38 @@
     <nav class="bottom-nav">
 
         <a href="/home.html">
+
             <i class="bi bi-house-fill"></i>
+
             <span>Home</span>
+
         </a>
+
 
         <a href="/orders.html">
+
             <i class="bi bi-box-seam"></i>
+
             <span>Orders</span>
+
         </a>
+
 
         <a href="/sell.html">
+
             <i class="bi bi-plus-circle-fill"></i>
+
             <span>Sell</span>
+
         </a>
 
+
         <a href="/profile.html">
+
             <i class="bi bi-person-circle"></i>
+
             <span>My Profile</span>
+
         </a>
 
     </nav>
