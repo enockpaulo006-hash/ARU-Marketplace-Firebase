@@ -1,4 +1,4 @@
-﻿import "./style.css";
+import "./style.css";
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase.js";
@@ -629,16 +629,15 @@ loadProduct();
 // --------------------------------------------------
 
 function normalizeTanzanianPhone(phone) {
-    let digits = String(phone || "").replace(/\D/g, "");
+    const digits = String(phone || "").trim();
 
-    if (digits.startsWith("0")) {
-        digits = "255" + digits.slice(1);
-
-    } else if (!digits.startsWith("255")) {
+    // Require exactly 10 digits beginning with 06 or 07.
+    if (!/^0[67]\d{8}$/.test(digits)) {
         return null;
     }
 
-    return /^255\d{9}$/.test(digits) ? digits : null;
+    // Store in international format for WhatsApp.
+    return "255" + digits.slice(1);
 }
 // --------------------------------------------------
 // CONTACT SELLER THROUGH WHATSAPP
@@ -743,33 +742,30 @@ async function placeOrder() {
         return;
     }
 
-    let buyerName = "";
-    let buyerPhone = "";
+    const buyerName = guestBuyerNameInput?.value.trim() || "";
+    const buyerPhone = normalizeTanzanianPhone(
+        guestBuyerPhoneInput?.value
+    );
 
-    if (!currentUser) {
-        buyerName = guestBuyerNameInput?.value.trim() || "";
-        buyerPhone = normalizeTanzanianPhone(guestBuyerPhoneInput?.value);
+    if (!buyerName) {
+        showOrderMessage("Please enter your full name.", "error");
+        guestBuyerNameInput?.focus();
+        return;
+    }
 
-        if (!buyerName) {
-            showOrderMessage("Please enter your full name.", "error");
-            guestBuyerNameInput?.focus();
-            return;
-        }
+    if (buyerName.length > 80) {
+        showOrderMessage("Your name must not exceed 80 characters.", "error");
+        guestBuyerNameInput?.focus();
+        return;
+    }
 
-        if (buyerName.length > 80) {
-            showOrderMessage("Your name must not exceed 80 characters.", "error");
-            guestBuyerNameInput?.focus();
-            return;
-        }
-
-        if (!buyerPhone) {
-            showOrderMessage(
-                "Enter a valid Tanzanian phone number, for example 07XXXXXXXX.",
-                "error"
-            );
-            guestBuyerPhoneInput?.focus();
-            return;
-        }
+    if (!buyerPhone) {
+        showOrderMessage(
+            "Enter exactly 10 digits, starting with 06 or 07.",
+            "error"
+        );
+        guestBuyerPhoneInput?.focus();
+        return;
     }
 
     const quantity = Number.parseInt(quantityInput?.value, 10);
@@ -840,6 +836,8 @@ async function placeOrder() {
 
         const orderData = {
             buyerId: currentUser ? currentUser.uid : "",
+            buyerName: buyerName,
+            buyerPhone: buyerPhone,
             sellerId: latestProduct.sellerId,
             productId,
             productTitle: latestProduct.title || "Product",
@@ -942,7 +940,7 @@ onAuthStateChanged(auth, async (user) => {
     authResolved = true;
 
     if (guestCheckoutFields) {
-        guestCheckoutFields.hidden = Boolean(user);
+        guestCheckoutFields.hidden = false;
     }
 
     if (!user) {
