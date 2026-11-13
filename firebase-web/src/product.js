@@ -908,3 +908,113 @@ async function placeOrder() {
         orderInProgress = false;
     }
 }
+// --------------------------------------------------
+// QUANTITY CONTROLS
+// --------------------------------------------------
+
+decreaseQuantityButton?.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+
+    quantityInput.value = String(
+        Math.max(1, quantity - 1)
+    );
+
+    updateOrderTotal();
+});
+
+increaseQuantityButton?.addEventListener("click", () => {
+    const quantity = Number.parseInt(quantityInput.value, 10) || 1;
+
+    quantityInput.value = String(
+        Math.min(99, quantity + 1)
+    );
+
+    updateOrderTotal();
+});
+
+quantityInput?.addEventListener(
+    "input",
+    updateOrderTotal
+);
+
+placeOrderButton?.addEventListener(
+    "click",
+    placeOrder
+);
+
+contactSellerButton?.addEventListener(
+    "click",
+    contactSeller
+);
+
+// --------------------------------------------------
+// AUTHENTICATION
+// Product viewing and guest checkout do not require login.
+// --------------------------------------------------
+
+onAuthStateChanged(auth, async (user) => {
+    currentUser = user || null;
+    isModerator = false;
+    authResolved = false;
+
+    if (guestCheckoutFields) {
+        guestCheckoutFields.hidden = false;
+    }
+
+    // A visitor without an account receives a Firebase anonymous account.
+    // This provides a stable UID so Firestore can securely protect guest orders.
+    if (!user) {
+        try {
+            await signInAnonymously(auth);
+        } catch (error) {
+            console.error("Guest authentication failed:", error);
+            authResolved = false;
+
+            if (placeOrderButton) {
+                placeOrderButton.disabled = true;
+            }
+
+            showOrderMessage(
+                "Secure guest checkout could not start. Check your internet connection and refresh the page.",
+                "error"
+            );
+        }
+        return;
+    }
+
+    authResolved = true;
+
+    // Anonymous users are guests, not moderators. Their UID is used as buyerId.
+    if (user.isAnonymous) {
+        return;
+    }
+
+    try {
+        const adminSnapshot = await getDoc(
+            doc(db, "admins", user.uid)
+        );
+
+        isModerator =
+            adminSnapshot.exists() &&
+            adminSnapshot.data().role === "ADMIN";
+
+        if (isModerator) {
+            if (placeOrderButton) {
+                placeOrderButton.disabled = true;
+            }
+
+            showOrderMessage(
+                "Moderator accounts cannot place orders.",
+                "error"
+            );
+        }
+
+    } catch (error) {
+        console.error("Account check failed:", error);
+
+        showOrderMessage(
+            "Could not verify your account permissions. Ordering may be unavailable.",
+            "error"
+        );
+    }
+});
