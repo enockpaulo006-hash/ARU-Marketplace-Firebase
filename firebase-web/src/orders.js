@@ -580,3 +580,216 @@ async function loadOrders() {
         loading = false;
     }
 }
+// --------------------------------------------------
+// HANDLE SELLER / BUYER ACTIONS
+// --------------------------------------------------
+
+async function handleOrderAction(orderId, action, button) {
+    const order = allOrders.find(item => item.id === orderId);
+
+    if (!order) return;
+
+    const isSeller = currentView === "seller";
+
+    // Seller actions require a registered seller account.
+    if (isSeller && (!currentUser || currentUser.isAnonymous)) {
+        return;
+    }
+
+    // Registered and anonymous buyers can act only on their own orders.
+    if (!isSeller) {
+        if (!currentUser || order.buyerId !== currentUser.uid) {
+            alert("You cannot cancel another buyer's order.");
+            return;
+        }
+    }
+
+    const nextStatus = {
+        accept: "accepted",
+        reject: "rejected",
+        complete: "completed",
+        cancel: "cancelled"
+    }[action];
+
+    if (!nextStatus) return;
+
+    if (isSeller && order.sellerId !== currentUser.uid) {
+        showMessage(
+            "Access denied",
+            "You cannot manage this seller's order."
+        );
+        return;
+    }
+
+    const allowed =
+        (
+            isSeller &&
+            order.status === "pending" &&
+            ["accepted", "rejected"].includes(nextStatus)
+        ) ||
+        (
+            isSeller &&
+            order.status === "accepted" &&
+            nextStatus === "completed"
+        ) ||
+        (
+            !isSeller &&
+            nextStatus === "cancelled" &&
+            canCancelOrder(order)
+        );
+
+    if (!allowed) {
+        alert(
+            nextStatus === "cancelled"
+                ? "You can cancel only a pending order within the first 5 hours. An accepted order cannot be cancelled."
+                : "This action is not allowed for the current order status."
+        );
+
+        await loadOrders();
+        return;
+    }
+
+    const confirmation = {
+        accept: "Accept this order?",
+        reject: "Reject this order?",
+        complete: "Mark this order as completed?",
+        cancel: "Are you sure you want to cancel this order?"
+    }[action];
+
+    if (!window.confirm(confirmation)) return;
+
+    button.disabled = true;
+    button.textContent = "Updating...";
+
+    try {
+        const orderRef = doc(db, "orders", orderId);
+
+        const latestSnapshot = await getDoc(orderRef);
+
+        if (!latestSnapshot.exists()) {
+            throw new Error("This order no longer exists.");
+        }
+
+        const latestOrder = latestSnapshot.data();
+
+        if (
+            isSeller &&
+            latestOrder.sellerId !== currentUser.uid
+        ) {
+            throw new Error("You cannot manage this order.");
+        }
+
+        if (
+            !isSeller &&
+            latestOrder.buyerId !== currentUser.uid
+        ) {
+            throw new Error("You cannot cancel this order.");
+        }
+
+        if (latestOrder.status !== order.status) {
+            throw new Error(
+                "The order status changed. Reload and try again."
+            );
+        }
+
+        // Recheck the five-hour restriction using the latest Firestore data.
+        if (
+            nextStatus === "cancelled" &&
+            !canCancelOrder(latestOrder)
+        ) {
+            throw new Error(
+                "This order can no longer be cancelled. Cancellation is allowed only while it is pending and within the first 5 hours."
+            );
+        }
+
+        const updateData = {
+            status: nextStatus,
+            updatedAt: serverTimestamp()
+        };
+
+        if (nextStatus === "completed") {
+            updateData.completedAt = serverTimestamp();
+        }
+
+        await updateDoc(orderRef, updateData);
+
+        await loadOrders();
+
+    } catch (error) {
+        console.error("Order update failed:", error);
+
+        alert(
+            error.code === "permission-denied"
+                ? "Firebase denied this action. The order may no longer be cancellable, or the Firestore rules need updating."
+                : error.message || "Unable to update the order."
+        );
+
+        await loadOrders();
+
+    } finally {
+        button.disabled = false;
+    }
+}
+
+// --------------------------------------------------
+// SWITCH BUYER / SELLER VIEW
+// --------------------------------------------------
+
+function setView(view) {
+    if (
+        view === "seller" &&
+        (!currentUser || currentUser.isAnonymous)
+    ) {
+        return;
+    }
+
+    currentView = view;
+
+    buyerTab?.classList.toggle("active", view === "buyer");
+    sellerTab?.classList.toggle("active", view === "seller");
+
+    buyerTab?.setAttribute(
+        "aria-pressed",
+        String(view === "buyer")
+    );
+
+    sellerTab?.setAttribute(
+        "aria-pressed",
+        String(view === "seller")
+    );
+
+    allOrders = [];
+
+    loadOrders();
+}
+
+buyerTab?.addEventListener("click", () => {
+    setView("buyer");
+});
+
+sellerTab?.addEventListener("click", () => {
+    setView("seller");
+});
+
+// --------------------------------------------------
+// FILTER BUTTONS
+// --------------------------------------------------
+
+filterButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        currentFilter = button.dataset.filter || "all";
+
+        filterButtons.forEach(item => {
+            const active = item === button;
+
+            item.classList.toggle("active", active);
+
+            item.setAttribute(
+                "aria-pressed",
+                String(active)
+            );
+        });
+
+        renderOrders();
+    });
+});
