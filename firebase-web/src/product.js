@@ -698,3 +698,213 @@ async function contactSeller() {
         if (contactSellerButton) contactSellerButton.disabled = false;
     }
 }
+// --------------------------------------------------
+// PLACE ORDER
+// Registered buyers and guests can place orders.
+// --------------------------------------------------
+
+async function placeOrder() {
+    if (!currentProduct || orderInProgress) {
+        showOrderMessage("Product information is not ready yet.", "error");
+        return;
+    }
+
+    if (!authResolved) {
+        showOrderMessage("Please wait a moment and try again.", "error");
+        return;
+    }
+
+    if (isModerator) {
+        showOrderMessage("Moderator accounts cannot place orders.", "error");
+        return;
+    }
+
+    if (currentUser && currentProduct.sellerId === currentUser.uid) {
+        showOrderMessage("You cannot place an order for your own product.", "error");
+        return;
+    }
+
+    if (currentProduct.status !== "active") {
+        showOrderMessage("This product is no longer available.", "error");
+        return;
+    }
+
+    const buyerName = guestBuyerNameInput?.value.trim() || "";
+    const buyerPhone = normalizeTanzanianPhone(
+        guestBuyerPhoneInput?.value
+    );
+
+    if (!buyerName) {
+        showOrderMessage("Please enter your full name.", "error");
+        guestBuyerNameInput?.focus();
+        return;
+    }
+
+    if (buyerName.length > 80) {
+        showOrderMessage("Your name must not exceed 80 characters.", "error");
+        guestBuyerNameInput?.focus();
+        return;
+    }
+
+    if (!buyerPhone) {
+        showOrderMessage(
+            "Enter exactly 10 digits, starting with 06 or 07.",
+            "error"
+        );
+        guestBuyerPhoneInput?.focus();
+        return;
+    }
+
+    const quantity = Number.parseInt(quantityInput?.value, 10);
+    const unitPrice = getSelectedPrice();
+
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
+        showOrderMessage("Please enter a valid quantity.", "error");
+        return;
+    }
+
+    if (unitPrice === null) {
+        showOrderMessage("The selected photo has no valid price.", "error");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Place an order for ${quantity} item(s) for ${
+            formatPrice(unitPrice * quantity)
+        }?`
+    );
+
+    if (!confirmed) return;
+
+    orderInProgress = true;
+
+    if (placeOrderButton) {
+        placeOrderButton.disabled = true;
+        placeOrderButton.innerHTML =
+            '<i class="bi bi-arrow-repeat"></i> Placing Order...';
+    }
+
+    try {
+        const latestSnapshot = await getDocFromServer(
+            doc(db, "products", productId)
+        );
+
+        if (!latestSnapshot.exists()) {
+            throw new Error("This product is no longer available.");
+        }
+
+        const latestProduct = latestSnapshot.data();
+
+        if (
+            latestProduct.status !== "active" ||
+            latestProduct.sellerId !== currentProduct.sellerId
+        ) {
+            throw new Error(
+                "This product has changed. Refresh and try again."
+            );
+        }
+
+        const latestPrice =
+            latestProduct.imagePrices?.[selectedImageIndex] ??
+            latestProduct.imageDetails?.[selectedImageIndex]?.price ??
+            (selectedImageIndex === 0 ? latestProduct.price : null);
+
+        if (latestPrice === null || Number(latestPrice) !== unitPrice) {
+            throw new Error(
+                "The photo price has changed. Refresh and try again."
+            );
+        }
+
+        if (currentUser && latestProduct.sellerId === currentUser.uid) {
+            throw new Error("You cannot order your own product.");
+        }
+
+        const imageUrls = latestProduct.imageUrls || [];
+
+        // Anonymous Firebase authentication gives guest buyers a private UID.
+        // Firestore rules can then verify ownership without exposing orders
+        // to anyone who happens to know an order document ID.
+        if (!currentUser) {
+            throw new Error(
+                "Guest checkout could not be securely initialized. Please refresh the page and try again."
+            );
+        }
+
+        const orderData = {
+            buyerId: currentUser.uid,
+            buyerName,
+            buyerPhone,
+            sellerId: latestProduct.sellerId,
+            productId,
+            productTitle: latestProduct.title || "Product",
+            productImage: imageUrls[selectedImageIndex] || "",
+            selectedImageIndex,
+            unitPrice,
+            quantity,
+            totalPrice: unitPrice * quantity,
+            status: "pending",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
+
+        const createdOrder = await addDoc(
+            collection(db, "orders"),
+            orderData
+        );
+
+        // Remember anonymous guest order IDs in this browser. A storage
+        // failure must not make a successfully-created order look unsuccessful.
+        if (currentUser.isAnonymous) {
+            const storageKey = "aru_marketplace_guest_order_ids_v1";
+
+            try {
+                const savedIds = JSON.parse(
+                    localStorage.getItem(storageKey) || "[]"
+                );
+                const orderIds = Array.isArray(savedIds) ? savedIds : [];
+
+                if (!orderIds.includes(createdOrder.id)) {
+                    orderIds.unshift(createdOrder.id);
+                }
+
+                localStorage.setItem(
+                    storageKey,
+                    JSON.stringify(orderIds.slice(0, 100))
+                );
+            } catch (storageError) {
+                console.error("Could not save guest order history:", storageError);
+            }
+        }
+
+        showOrderMessage(
+            `Order placed successfully! Order ID: ${createdOrder.id}. ` +
+            `Product: ${latestProduct.title || "Product"}. ` +
+            `Quantity: ${quantity}. Total: ${formatPrice(unitPrice * quantity)}. ` +
+            `Current status: Pending. Open Orders to follow its progress.`,
+            "success"
+        );
+
+        if (placeOrderButton) {
+            placeOrderButton.innerHTML =
+                '<i class="bi bi-check-circle"></i> Order Placed';
+            placeOrderButton.disabled = true;
+        }
+
+    } catch (error) {
+        console.error("Failed to place order:", error);
+
+        showOrderMessage(
+            error.message || "Unable to place your order. Please try again.",
+            "error"
+        );
+
+        if (placeOrderButton) {
+            placeOrderButton.disabled = false;
+            placeOrderButton.innerHTML =
+                '<i class="bi bi-bag-check"></i> Place Order';
+        }
+
+    } finally {
+        orderInProgress = false;
+    }
+}
