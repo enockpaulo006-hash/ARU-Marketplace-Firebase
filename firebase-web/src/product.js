@@ -309,3 +309,392 @@ function getOptimizedImageUrl(url, width = 1000) {
         return url;
     }
 }
+// --------------------------------------------------
+// IMAGE LOADERS
+// --------------------------------------------------
+
+function createImageLoader(extraClass = "") {
+    const loader = document.createElement("div");
+
+    loader.className =
+        `product-image-placeholder ${extraClass}`.trim();
+
+    loader.setAttribute("role", "status");
+    loader.setAttribute("aria-label", "Loading image");
+
+    for (let i = 0; i < 3; i++) {
+        const dot = document.createElement("span");
+        dot.className = "loading-dot";
+        loader.appendChild(dot);
+    }
+
+    return loader;
+}
+
+function showUnavailableImage(
+    container,
+    message = "Image unavailable"
+) {
+    container.className = "no-product-image";
+
+    container.innerHTML = `
+        <i class="bi bi-image"></i>
+        <span>${message}</span>
+    `;
+}
+
+// --------------------------------------------------
+// DISPLAY PRODUCT IMAGES AND THUMBNAILS
+// --------------------------------------------------
+
+function displayProductImages() {
+    if (!mainImage || !thumbnails) return;
+
+    const imageUrls = currentProduct?.imageUrls || [];
+
+    mainImage.replaceChildren();
+    thumbnails.replaceChildren();
+
+    if (!imageUrls.length) {
+        showUnavailableImage(mainImage, "No Image");
+        return;
+    }
+
+    function showMainImage(index) {
+        if (!imageUrls[index]) return;
+
+        selectedImageIndex = index;
+
+        const image = document.createElement("img");
+
+        image.id = "selected-product-image";
+
+        image.alt =
+            currentProduct.title || `Product image ${index + 1}`;
+
+        image.className = "product-image-loading";
+        image.decoding = "async";
+        image.loading = "eager";
+
+        image.fetchPriority = index === 0 ? "high" : "auto";
+
+        const loader = createImageLoader();
+
+        mainImage.replaceChildren(loader);
+
+        image.addEventListener("load", () => {
+            loader.remove();
+
+            image.classList.remove("product-image-loading");
+            image.classList.add("product-image-loaded");
+
+        }, { once: true });
+
+        image.addEventListener("error", () => {
+            showUnavailableImage(loader);
+            image.remove();
+
+        }, { once: true });
+
+        mainImage.appendChild(image);
+
+        const price = getPhotoPrice(index);
+
+        if (price !== null) {
+            const priceLabel = document.createElement("div");
+
+            priceLabel.className = "product-photo-price";
+            priceLabel.textContent = formatPrice(price);
+
+            mainImage.appendChild(priceLabel);
+        }
+
+        image.src = getOptimizedImageUrl(imageUrls[index], 800);
+
+        thumbnails.querySelectorAll(".product-thumbnail").forEach(
+            (thumbnail, thumbnailIndex) => {
+                thumbnail.classList.toggle(
+                    "active",
+                    thumbnailIndex === index
+                );
+            }
+        );
+
+        updateOrderTotal();
+
+        if (productPrice && price !== null) {
+            productPrice.textContent = formatPrice(price);
+        }
+    }
+
+    imageUrls.forEach((url, index) => {
+        const thumbnail = document.createElement("button");
+
+        thumbnail.type = "button";
+        thumbnail.className = "product-thumbnail";
+
+        thumbnail.setAttribute(
+            "aria-label",
+            `View product photo ${index + 1}`
+        );
+
+        const thumbnailWrapper = document.createElement("span");
+
+        thumbnailWrapper.className = "product-thumbnail-image";
+
+        const loader = createImageLoader("thumbnail-image-loader");
+
+        const image = document.createElement("img");
+
+        image.alt = `Product photo ${index + 1}`;
+        image.loading = index === 0 ? "eager" : "lazy";
+        image.decoding = "async";
+
+        image.addEventListener("load", () => {
+            loader.remove();
+            image.classList.add("product-image-loaded");
+
+        }, { once: true });
+
+        image.addEventListener("error", () => {
+            showUnavailableImage(loader, "Unavailable");
+            image.remove();
+
+        }, { once: true });
+
+        thumbnailWrapper.append(loader, image);
+        thumbnail.appendChild(thumbnailWrapper);
+
+        image.src = getOptimizedImageUrl(url, 180);
+
+        const price = getPhotoPrice(index);
+
+        if (price !== null) {
+            const label = document.createElement("span");
+
+            label.className = "product-thumbnail-price";
+            label.textContent = formatPrice(price);
+
+            thumbnail.appendChild(label);
+        }
+
+        thumbnail.addEventListener("click", () => {
+            showMainImage(index);
+        });
+
+        thumbnails.appendChild(thumbnail);
+    });
+
+    showMainImage(0);
+}
+
+// --------------------------------------------------
+// RENDER PRODUCT INFORMATION
+// --------------------------------------------------
+
+function renderProduct(product) {
+    currentProduct = product;
+    selectedImageIndex = 0;
+
+    if (productTitle) {
+        productTitle.textContent =
+            product.title || "Untitled Product";
+    }
+
+    if (productCategory) {
+        productCategory.textContent =
+            product.category || "Other";
+    }
+
+    if (productCondition) {
+        productCondition.textContent =
+            product.productCondition || "Not specified";
+    }
+
+    if (productLocation) {
+        productLocation.textContent =
+            product.location || "Not specified";
+    }
+
+    if (productDescription) {
+        productDescription.textContent =
+            product.description || "No description available.";
+    }
+
+    if (productPrice) {
+        productPrice.textContent =
+            formatPrice(getPhotoPrice(0) ?? product.price);
+    }
+
+    displayProductImages();
+    updateOrderTotal();
+
+    showProductContent();
+}
+
+// --------------------------------------------------
+// LOAD PRODUCT
+// CACHE FIRST + BACKGROUND REFRESH
+// --------------------------------------------------
+
+async function loadProduct() {
+    if (!productId) {
+        showProductError("Product link is missing its ID.");
+        return;
+    }
+
+    const cachedProduct = readCachedProduct(productId);
+
+    const hasCachedProduct = Boolean(cachedProduct);
+
+    if (hasCachedProduct) {
+        renderProduct(cachedProduct);
+
+        console.log("Displayed cached product:", productId);
+
+    } else {
+        showProductLoader();
+    }
+
+    try {
+        const snapshot = await getDocFromServer(
+            doc(db, "products", productId)
+        );
+
+        if (!snapshot.exists()) {
+            removeProductCache(productId);
+
+            showProductError(
+                "This product could not be found."
+            );
+
+            return;
+        }
+
+        const freshProduct = snapshot.data();
+
+        if (freshProduct.status !== "active") {
+            removeProductCache(productId);
+
+            showProductError(
+                "This product is no longer available."
+            );
+
+            return;
+        }
+
+        saveProductCache(productId, freshProduct);
+
+        renderProduct(freshProduct);
+
+        console.log(
+            "Product refreshed from Firestore:",
+            productId
+        );
+
+    } catch (error) {
+        console.error(
+            "Failed to refresh product:",
+            error
+        );
+
+        if (hasCachedProduct) {
+            console.log(
+                "Using cached product while offline."
+            );
+
+        } else {
+            showProductError(
+                "Unable to load this product. Please check your connection and try again."
+            );
+        }
+    }
+}
+
+// Load product immediately.
+loadProduct();
+
+// --------------------------------------------------
+// TANZANIAN PHONE NUMBER
+// --------------------------------------------------
+
+function normalizeTanzanianPhone(phone) {
+    const digits = String(phone || "").trim();
+
+    if (!/^0[67]\d{8}$/.test(digits)) {
+        return null;
+    }
+
+    return "255" + digits.slice(1);
+}
+
+// --------------------------------------------------
+// CONTACT SELLER THROUGH WHATSAPP
+// Login is NOT required to contact a seller.
+// --------------------------------------------------
+
+async function contactSeller() {
+    if (!currentProduct) {
+        showOrderMessage("Product information is not ready yet.", "error");
+        return;
+    }
+
+    if (!authResolved) {
+        showOrderMessage("Please wait a moment and try again.", "error");
+        return;
+    }
+
+    if (currentUser && currentProduct.sellerId === currentUser.uid) {
+        showOrderMessage("This is your own product listing.", "error");
+        return;
+    }
+
+    const whatsappWindow = window.open("about:blank", "_blank");
+
+    if (!whatsappWindow) {
+        showOrderMessage("Please allow pop-ups to open WhatsApp.", "error");
+        return;
+    }
+
+    whatsappWindow.opener = null;
+
+    if (contactSellerButton) contactSellerButton.disabled = true;
+
+    try {
+        const snapshot = await getDocFromServer(
+            doc(db, "sellerContacts", currentProduct.sellerId)
+        );
+
+        if (!snapshot.exists()) {
+            throw new Error("This seller has not added a WhatsApp contact yet.");
+        }
+
+        const phone = normalizeTanzanianPhone(snapshot.data().whatsapp);
+
+        if (!phone) {
+            throw new Error("The seller's WhatsApp number is missing or invalid.");
+        }
+
+        const message =
+            `Hello, I am interested in your product: ${
+                currentProduct.title || "a product"
+            } on ARU Marketplace.`;
+
+        whatsappWindow.location.href =
+            `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+        showOrderMessage("Opening WhatsApp to contact the seller...", "success");
+
+    } catch (error) {
+        whatsappWindow.close();
+        console.error("Contact seller failed:", error);
+
+        showOrderMessage(
+            error.message || "Unable to contact this seller.",
+            "error"
+        );
+
+    } finally {
+        if (contactSellerButton) contactSellerButton.disabled = false;
+    }
+}
