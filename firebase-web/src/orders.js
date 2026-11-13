@@ -1,7 +1,10 @@
-
 import "./style.css";
 
-import { onAuthStateChanged } from "firebase/auth";
+import {
+    onAuthStateChanged,
+    signInAnonymously
+} from "firebase/auth";
+
 import {
     collection,
     query,
@@ -12,6 +15,7 @@ import {
     updateDoc,
     serverTimestamp
 } from "firebase/firestore";
+
 import { auth, db } from "./firebase.js";
 
 // --------------------------------------------------
@@ -22,6 +26,7 @@ const ordersList = document.getElementById("orders-list");
 const ordersCount = document.getElementById("orders-count");
 const buyerTab = document.getElementById("buyer-orders-tab");
 const sellerTab = document.getElementById("seller-orders-tab");
+
 const filterButtons = document.querySelectorAll(
     ".orders-filters .product-filter"
 );
@@ -76,8 +81,13 @@ function readGuestOrderIds() {
         );
 
         return Array.isArray(parsed)
-            ? [...new Set(parsed.filter(id => typeof id === "string" && id.trim()))]
+            ? [...new Set(
+                parsed.filter(
+                    id => typeof id === "string" && id.trim()
+                )
+            )]
             : [];
+
     } catch (error) {
         console.warn("Could not read guest order history:", error);
         return [];
@@ -90,15 +100,19 @@ function saveGuestOrderIds(ids) {
             GUEST_ORDER_STORAGE_KEY,
             JSON.stringify([...new Set(ids)].slice(0, 100))
         );
+
     } catch (error) {
         console.warn("Could not update guest order history:", error);
     }
 }
 
 function completedMoreThan24HoursAgo(order) {
-    if (escapeStatus(order.status) !== "completed") return false;
+    if (escapeStatus(order.status) !== "completed") {
+        return false;
+    }
 
     const completedMillis = order.completedAt?.toMillis?.();
+
     if (!completedMillis) return false;
 
     return Date.now() - completedMillis >= 24 * 60 * 60 * 1000;
@@ -106,9 +120,12 @@ function completedMoreThan24HoursAgo(order) {
 
 // Customers can cancel only pending orders during the first five hours.
 function canCancelOrder(order) {
-    if (escapeStatus(order.status) !== "pending") return false;
+    if (escapeStatus(order.status) !== "pending") {
+        return false;
+    }
 
     const createdAtMillis = order.createdAt?.toMillis?.();
+
     if (!createdAtMillis) return false;
 
     const elapsedTime = Date.now() - createdAtMillis;
@@ -164,7 +181,10 @@ function matchesFilter(order) {
 
     // Completed orders disappear after 24 hours from the customer's view.
     // Sellers retain their order history.
-    if (currentView === "buyer" && completedMoreThan24HoursAgo(order)) {
+    if (
+        currentView === "buyer" &&
+        completedMoreThan24HoursAgo(order)
+    ) {
         return false;
     }
 
@@ -239,14 +259,19 @@ function createOrderCard(order) {
 
     const quantity = document.createElement("p");
     quantity.className = "order-meta";
-    quantity.textContent = `Quantity: ${Number(order.quantity) || 1}`;
+    quantity.textContent =
+        `Quantity: ${Number(order.quantity) || 1}`;
 
     details.append(title, price, quantity);
     product.appendChild(details);
 
     const status = document.createElement("span");
-    status.className = `order-status order-status-${escapeStatus(order.status)}`;
-    status.textContent = statusLabel(escapeStatus(order.status));
+    status.className =
+        `order-status order-status-${escapeStatus(order.status)}`;
+
+    status.textContent = statusLabel(
+        escapeStatus(order.status)
+    );
 
     top.append(product, status);
 
@@ -254,7 +279,8 @@ function createOrderCard(order) {
     meta.className = "order-card-meta";
 
     const orderDate = document.createElement("p");
-    orderDate.textContent = `Ordered: ${dateText(order.createdAt)}`;
+    orderDate.textContent =
+        `Ordered: ${dateText(order.createdAt)}`;
 
     const orderNumber = document.createElement("p");
     orderNumber.textContent = `Order ID: ${order.id}`;
@@ -277,7 +303,8 @@ function createOrderCard(order) {
 
         if (order.buyerName) {
             const customerName = document.createElement("p");
-            customerName.textContent = `Name: ${order.buyerName}`;
+            customerName.textContent =
+                `Name: ${order.buyerName}`;
 
             customerDetails.appendChild(customerName);
         }
@@ -289,7 +316,10 @@ function createOrderCard(order) {
             phoneLabel.textContent = "Phone: ";
 
             const phoneLink = document.createElement("a");
-            const phoneDigits = String(order.buyerPhone).replace(/\D/g, "");
+            const phoneDigits = String(order.buyerPhone).replace(
+                /\D/g,
+                ""
+            );
 
             phoneLink.textContent = order.buyerPhone;
             phoneLink.href = `tel:+${phoneDigits}`;
@@ -320,6 +350,7 @@ function createOrderCard(order) {
                     "danger"
                 )
             );
+
         } else if (orderStatus === "accepted") {
             actions.append(
                 createActionButton(
@@ -330,7 +361,11 @@ function createOrderCard(order) {
                 )
             );
         }
-    } else if (orderStatus === "pending" && canCancelOrder(order)) {
+
+    } else if (
+        orderStatus === "pending" &&
+        canCancelOrder(order)
+    ) {
         actions.append(
             createActionButton(
                 "Cancel order",
@@ -353,473 +388,3 @@ function createOrderCard(order) {
 
     return card;
 }
-
-// --------------------------------------------------
-// RENDER ORDERS
-// --------------------------------------------------
-
-function renderOrders() {
-    if (!ordersList || !ordersCount) return;
-
-    ordersList.replaceChildren();
-
-    const visibleOrders = allOrders.filter(matchesFilter);
-
-    ordersCount.textContent =
-        `${visibleOrders.length} order${visibleOrders.length === 1 ? "" : "s"}`;
-
-    if (visibleOrders.length === 0) {
-        showMessage(
-            "No orders found",
-            guestMode
-                ? "Orders you place on this browser will appear here."
-                : currentView === "buyer"
-                    ? "Orders you place will appear here."
-                    : "Orders for your products will appear here."
-        );
-
-        ordersCount.textContent = "0 orders";
-        return;
-    }
-
-    visibleOrders.forEach(order => {
-        ordersList.appendChild(createOrderCard(order));
-    });
-}
-
-// --------------------------------------------------
-// LOAD GUEST ORDERS
-// --------------------------------------------------
-
-async function loadGuestOrders() {
-    if (loading) return;
-
-    loading = true;
-
-    showMessage(
-        "Loading your orders",
-        "Please wait while we retrieve your orders."
-    );
-
-    ordersCount.textContent = "Loading...";
-
-    try {
-        const savedIds = readGuestOrderIds();
-
-        const fetchedOrders = [];
-        const stillTrackedIds = [];
-
-        for (const orderId of savedIds) {
-            try {
-                const snapshot = await getDoc(
-                    doc(db, "orders", orderId)
-                );
-
-                if (!snapshot.exists()) continue;
-
-                const order = {
-                    id: snapshot.id,
-                    ...snapshot.data()
-                };
-
-                // Only display guest orders in guest mode.
-                if (order.buyerId !== "") continue;
-
-                if (completedMoreThan24HoursAgo(order)) {
-                    continue;
-                }
-
-                fetchedOrders.push(order);
-                stillTrackedIds.push(orderId);
-
-            } catch (error) {
-                console.warn(
-                    `Could not retrieve guest order ${orderId}:`,
-                    error
-                );
-
-                // Keep the ID in case this is a temporary connection problem.
-                stillTrackedIds.push(orderId);
-            }
-        }
-
-        saveGuestOrderIds(stillTrackedIds);
-
-        allOrders = fetchedOrders;
-
-        allOrders.sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() || 0;
-            const bTime = b.createdAt?.toMillis?.() || 0;
-
-            return bTime - aTime;
-        });
-
-        renderOrders();
-
-    } catch (error) {
-        console.error("Failed to load guest orders:", error);
-
-        showMessage(
-            "Unable to load your orders",
-            "Check your internet connection and refresh the page."
-        );
-
-        ordersCount.textContent = "Orders unavailable";
-
-    } finally {
-        loading = false;
-    }
-}
-
-// --------------------------------------------------
-// LOAD SIGNED-IN BUYER / SELLER ORDERS
-// --------------------------------------------------
-
-async function loadOrders() {
-    if (guestMode) {
-        await loadGuestOrders();
-        return;
-    }
-
-    if (!currentUser || loading) return;
-
-    loading = true;
-
-    showMessage(
-        "Loading orders",
-        "Please wait while we retrieve your orders."
-    );
-
-    try {
-        const field =
-            currentView === "buyer" ? "buyerId" : "sellerId";
-
-        const ordersQuery = query(
-            collection(db, "orders"),
-            where(field, "==", currentUser.uid)
-        );
-
-        const snapshot = await getDocs(ordersQuery);
-
-        allOrders = snapshot.docs.map(orderDoc => ({
-            id: orderDoc.id,
-            ...orderDoc.data()
-        }));
-
-        allOrders.sort((a, b) => {
-            const aTime = a.createdAt?.toMillis?.() || 0;
-            const bTime = b.createdAt?.toMillis?.() || 0;
-
-            return bTime - aTime;
-        });
-
-        renderOrders();
-
-    } catch (error) {
-        console.error("Failed to load orders:", error);
-
-        showMessage(
-            "Unable to load orders",
-            `Check your connection and Firestore permissions. ${error.code || ""}`
-        );
-
-        ordersCount.textContent = "Orders unavailable";
-
-    } finally {
-        loading = false;
-    }
-}
-
-// --------------------------------------------------
-// HANDLE SELLER / REGISTERED BUYER ACTIONS
-// --------------------------------------------------
-
-async function handleOrderAction(orderId, action, button) {
-    const order = allOrders.find(item => item.id === orderId);
-
-    if (!order) return;
-
-    const isSeller = currentView === "seller";
-
-    // Seller actions require a signed-in seller account.
-    if (isSeller && !currentUser) return;
-
-    // A buyer can act only on their own order. Guest orders are
-    // tracked by their saved order ID in this browser.
-    if (!isSeller) {
-        if (guestMode && order.buyerId !== "") return;
-
-        if (
-            !guestMode &&
-            (!currentUser || order.buyerId !== currentUser.uid)
-        ) {
-            alert("You cannot cancel another buyer's order.");
-            return;
-        }
-    }
-
-    const nextStatus = {
-        accept: "accepted",
-        reject: "rejected",
-        complete: "completed",
-        cancel: "cancelled"
-    }[action];
-
-    if (!nextStatus) return;
-
-    if (isSeller && order.sellerId !== currentUser.uid) {
-        showMessage(
-            "Access denied",
-            "You cannot manage this seller's order."
-        );
-        return;
-    }
-
-    const allowed =
-        (
-            isSeller &&
-            order.status === "pending" &&
-            ["accepted", "rejected"].includes(nextStatus)
-        ) ||
-        (
-            isSeller &&
-            order.status === "accepted" &&
-            nextStatus === "completed"
-        ) ||
-        (
-            !isSeller &&
-            nextStatus === "cancelled" &&
-            canCancelOrder(order)
-        );
-
-    if (!allowed) {
-        alert(
-            nextStatus === "cancelled"
-                ? "You can cancel only a pending order within the first 5 hours. An accepted order cannot be cancelled."
-                : "This action is not allowed for the current order status."
-        );
-        await loadOrders();
-        return;
-    }
-
-    const confirmation = {
-        accept: "Accept this order?",
-        reject: "Reject this order?",
-        complete: "Mark this order as completed?",
-        cancel: "Are you sure you want to cancel this order?"
-    }[action];
-
-    if (!window.confirm(confirmation)) return;
-
-    button.disabled = true;
-    button.textContent = "Updating...";
-
-    try {
-        const orderRef = doc(db, "orders", orderId);
-        const latestSnapshot = await getDoc(orderRef);
-
-        if (!latestSnapshot.exists()) {
-            throw new Error("This order no longer exists.");
-        }
-
-        const latestOrder = latestSnapshot.data();
-
-        if (
-            isSeller &&
-            latestOrder.sellerId !== currentUser.uid
-        ) {
-            throw new Error("You cannot manage this order.");
-        }
-
-        if (
-            !isSeller &&
-            (
-                guestMode
-                    ? latestOrder.buyerId !== ""
-                    : latestOrder.buyerId !== currentUser.uid
-            )
-        ) {
-            throw new Error("You cannot cancel this order.");
-        }
-
-        if (latestOrder.status !== order.status) {
-            throw new Error(
-                "The order status changed. Reload and try again."
-            );
-        }
-
-        // Recheck the five-hour limit against the latest Firestore data.
-        if (
-            nextStatus === "cancelled" &&
-            !canCancelOrder(latestOrder)
-        ) {
-            throw new Error(
-                "This order can no longer be cancelled. Cancellation is allowed only while it is pending and within the first 5 hours."
-            );
-        }
-
-        const updateData = {
-            status: nextStatus,
-            updatedAt: serverTimestamp()
-        };
-
-        if (nextStatus === "completed") {
-            updateData.completedAt = serverTimestamp();
-        }
-
-        await updateDoc(orderRef, updateData);
-        await loadOrders();
-
-    } catch (error) {
-        console.error("Order update failed:", error);
-
-        alert(
-            error.code === "permission-denied"
-                ? "Firebase denied this action. The order may no longer be cancellable, or the Firestore rules need updating."
-                : error.message || "Unable to update the order."
-        );
-
-        await loadOrders();
-
-    } finally {
-        button.disabled = false;
-    }
-}
-
-// --------------------------------------------------
-// SWITCH BUYER / SELLER VIEW
-// --------------------------------------------------
-
-function setView(view) {
-    if (view === "seller" && !currentUser) return;
-
-    currentView = view;
-
-    buyerTab?.classList.toggle("active", view === "buyer");
-    sellerTab?.classList.toggle("active", view === "seller");
-
-    buyerTab?.setAttribute(
-        "aria-pressed",
-        String(view === "buyer")
-    );
-
-    sellerTab?.setAttribute(
-        "aria-pressed",
-        String(view === "seller")
-    );
-
-    allOrders = [];
-
-    loadOrders();
-}
-
-buyerTab?.addEventListener("click", () => {
-    setView("buyer");
-});
-
-sellerTab?.addEventListener("click", () => {
-    setView("seller");
-});
-
-// --------------------------------------------------
-// FILTER BUTTONS
-// --------------------------------------------------
-
-filterButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        currentFilter = button.dataset.filter || "all";
-
-        filterButtons.forEach(item => {
-            const active = item === button;
-
-            item.classList.toggle("active", active);
-
-            item.setAttribute(
-                "aria-pressed",
-                String(active)
-            );
-        });
-
-        renderOrders();
-    });
-});
-
-// --------------------------------------------------
-// AUTHENTICATION
-// --------------------------------------------------
-
-onAuthStateChanged(auth, async user => {
-    currentUser = user || null;
-    allOrders = [];
-
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
-    }
-
-    if (!user) {
-        guestMode = true;
-        currentView = "buyer";
-
-        if (sellerTab) {
-            sellerTab.hidden = true;
-            sellerTab.disabled = true;
-        }
-
-        buyerTab?.removeAttribute("hidden");
-
-        if (buyerTab) {
-            buyerTab.disabled = false;
-        }
-
-        if (ordersList) {
-            await loadGuestOrders();
-        }
-
-    } else {
-        guestMode = false;
-
-        if (sellerTab) {
-            sellerTab.hidden = false;
-            sellerTab.disabled = false;
-        }
-
-        try {
-            const adminSnapshot = await getDoc(
-                doc(db, "admins", user.uid)
-            );
-
-            if (
-                adminSnapshot.exists() &&
-                adminSnapshot.data().role === "ADMIN"
-            ) {
-                window.location.replace("/moderator.html");
-                return;
-            }
-
-            await loadOrders();
-
-        } catch (error) {
-            console.error(
-                "Account permissions check failed:",
-                error
-            );
-
-            showMessage(
-                "Unable to verify your account",
-                "Please refresh the page and try again."
-            );
-        }
-    }
-
-    // Recheck once per minute.
-    refreshTimer = setInterval(() => {
-        if (guestMode) {
-            loadGuestOrders();
-        } else if (currentUser) {
-            loadOrders();
-        }
-    }, 60 * 1000);
-});
-
-console.log("ARU Marketplace Orders initialized.");
