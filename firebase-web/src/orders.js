@@ -388,3 +388,195 @@ function createOrderCard(order) {
 
     return card;
 }
+// --------------------------------------------------
+// RENDER ORDERS
+// --------------------------------------------------
+
+function renderOrders() {
+    if (!ordersList || !ordersCount) return;
+
+    ordersList.replaceChildren();
+
+    const visibleOrders = allOrders.filter(matchesFilter);
+
+    ordersCount.textContent =
+        `${visibleOrders.length} order${visibleOrders.length === 1 ? "" : "s"}`;
+
+    if (visibleOrders.length === 0) {
+        showMessage(
+            "No orders found",
+            guestMode
+                ? "Orders you place on this browser will appear here."
+                : currentView === "buyer"
+                    ? "Orders you place will appear here."
+                    : "Orders for your products will appear here."
+        );
+
+        ordersCount.textContent = "0 orders";
+        return;
+    }
+
+    visibleOrders.forEach(order => {
+        ordersList.appendChild(createOrderCard(order));
+    });
+}
+
+// --------------------------------------------------
+// LOAD GUEST ORDERS
+// --------------------------------------------------
+
+async function loadGuestOrders() {
+    if (loading) return;
+
+    // Guest orders belong to this exact Firebase anonymous session.
+    if (!currentUser || !currentUser.isAnonymous) {
+        showMessage(
+            "Guest session unavailable",
+            "Please refresh this page and try again."
+        );
+        return;
+    }
+
+    loading = true;
+
+    showMessage(
+        "Loading your orders",
+        "Please wait while we retrieve your orders."
+    );
+
+    if (ordersCount) {
+        ordersCount.textContent = "Loading...";
+    }
+
+    try {
+        const savedIds = readGuestOrderIds();
+
+        const fetchedOrders = [];
+        const stillTrackedIds = [];
+
+        for (const orderId of savedIds) {
+            try {
+                const snapshot = await getDoc(
+                    doc(db, "orders", orderId)
+                );
+
+                if (!snapshot.exists()) continue;
+
+                const order = {
+                    id: snapshot.id,
+                    ...snapshot.data()
+                };
+
+                // Never display an order belonging to another account.
+                if (order.buyerId !== currentUser.uid) {
+                    continue;
+                }
+
+                if (completedMoreThan24HoursAgo(order)) {
+                    continue;
+                }
+
+                fetchedOrders.push(order);
+                stillTrackedIds.push(orderId);
+
+            } catch (error) {
+                console.warn(
+                    `Could not retrieve guest order ${orderId}:`,
+                    error
+                );
+
+                // Keep the ID in case this is a temporary connection problem.
+                stillTrackedIds.push(orderId);
+            }
+        }
+
+        saveGuestOrderIds(stillTrackedIds);
+
+        allOrders = fetchedOrders;
+
+        allOrders.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || 0;
+            const bTime = b.createdAt?.toMillis?.() || 0;
+
+            return bTime - aTime;
+        });
+
+        renderOrders();
+
+    } catch (error) {
+        console.error("Failed to load guest orders:", error);
+
+        showMessage(
+            "Unable to load your orders",
+            "Check your internet connection and refresh the page."
+        );
+
+        if (ordersCount) {
+            ordersCount.textContent = "Orders unavailable";
+        }
+
+    } finally {
+        loading = false;
+    }
+}
+
+// --------------------------------------------------
+// LOAD REGISTERED BUYER / SELLER ORDERS
+// --------------------------------------------------
+
+async function loadOrders() {
+    if (guestMode) {
+        await loadGuestOrders();
+        return;
+    }
+
+    if (!currentUser || loading) return;
+
+    loading = true;
+
+    showMessage(
+        "Loading orders",
+        "Please wait while we retrieve your orders."
+    );
+
+    try {
+        const field =
+            currentView === "buyer" ? "buyerId" : "sellerId";
+
+        const ordersQuery = query(
+            collection(db, "orders"),
+            where(field, "==", currentUser.uid)
+        );
+
+        const snapshot = await getDocs(ordersQuery);
+
+        allOrders = snapshot.docs.map(orderDoc => ({
+            id: orderDoc.id,
+            ...orderDoc.data()
+        }));
+
+        allOrders.sort((a, b) => {
+            const aTime = a.createdAt?.toMillis?.() || 0;
+            const bTime = b.createdAt?.toMillis?.() || 0;
+
+            return bTime - aTime;
+        });
+
+        renderOrders();
+
+    } catch (error) {
+        console.error("Failed to load orders:", error);
+
+        showMessage(
+            "Unable to load orders",
+            `Check your connection and Firestore permissions. ${error.code || ""}`
+        );
+
+        if (ordersCount) {
+            ordersCount.textContent = "Orders unavailable";
+        }
+
+    } finally {
+        loading = false;
+    }
+}
