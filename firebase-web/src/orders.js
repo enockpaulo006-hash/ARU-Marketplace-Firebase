@@ -793,3 +793,108 @@ filterButtons.forEach(button => {
         renderOrders();
     });
 });
+// --------------------------------------------------
+// AUTHENTICATION
+// --------------------------------------------------
+
+onAuthStateChanged(auth, async user => {
+    currentUser = user || null;
+    allOrders = [];
+
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+    }
+
+    // If someone opens the Orders page directly without an account,
+    // create an anonymous Firebase session.
+    if (!user) {
+        try {
+            await signInAnonymously(auth);
+
+        } catch (error) {
+            console.error("Guest authentication failed:", error);
+
+            guestMode = true;
+
+            showMessage(
+                "Unable to start guest session",
+                "Please check your internet connection and refresh the page."
+            );
+
+            if (ordersCount) {
+                ordersCount.textContent = "Orders unavailable";
+            }
+        }
+
+        return;
+    }
+
+    guestMode = Boolean(user.isAnonymous);
+    currentView = "buyer";
+
+    if (guestMode) {
+        // Anonymous buyers can see only their own buyer orders.
+        if (sellerTab) {
+            sellerTab.hidden = true;
+            sellerTab.disabled = true;
+        }
+
+        buyerTab?.removeAttribute("hidden");
+
+        if (buyerTab) {
+            buyerTab.disabled = false;
+        }
+
+        await loadGuestOrders();
+
+    } else {
+        // Registered users can access buyer and seller views.
+        if (sellerTab) {
+            sellerTab.hidden = false;
+            sellerTab.disabled = false;
+        }
+
+        try {
+            const adminSnapshot = await getDoc(
+                doc(db, "admins", user.uid)
+            );
+
+            if (
+                adminSnapshot.exists() &&
+                adminSnapshot.data().role === "ADMIN"
+            ) {
+                window.location.replace("/moderator.html");
+                return;
+            }
+
+            await loadOrders();
+
+        } catch (error) {
+            console.error(
+                "Account permissions check failed:",
+                error
+            );
+
+            showMessage(
+                "Unable to verify your account",
+                "Please refresh the page and try again."
+            );
+        }
+    }
+
+    // Refresh order status once per minute.
+    refreshTimer = setInterval(() => {
+        if (guestMode && currentUser?.isAnonymous) {
+            loadGuestOrders();
+
+        } else if (
+            currentUser &&
+            !currentUser.isAnonymous
+        ) {
+            loadOrders();
+        }
+    }, 60 * 1000);
+});
+
+console.log("ARU Marketplace Orders initialized.");
