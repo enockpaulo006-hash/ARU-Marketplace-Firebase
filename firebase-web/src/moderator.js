@@ -1,4 +1,3 @@
-
 import "./style.css";
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -9,6 +8,7 @@ import {
     doc,
     getDoc,
     updateDoc,
+    deleteDoc,
     serverTimestamp
 } from "firebase/firestore";
 
@@ -298,7 +298,6 @@ function renderProducts() {
         list.appendChild(createProductCard(product));
     });
 }
-
 // CREATE PRODUCT CARD
 
 function createProductCard(product) {
@@ -374,7 +373,7 @@ function createProductCard(product) {
         details.appendChild(reason);
     }
 
-    // Only pending products have review buttons.
+    // PENDING PRODUCTS: APPROVE AND REJECT BUTTONS.
 
     if (product.status === "pending") {
         const actions = document.createElement("div");
@@ -399,6 +398,23 @@ function createProductCard(product) {
         });
 
         actions.append(approveButton, rejectButton);
+        details.appendChild(actions);
+
+    // APPROVED PRODUCTS: DELETE BUTTON.
+    } else if (product.status === "active") {
+        const actions = document.createElement("div");
+        actions.className = "my-product-actions";
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "my-product-delete-button";
+        deleteButton.textContent = "Delete";
+
+        deleteButton.addEventListener("click", () => {
+            deleteApprovedProduct(product, deleteButton);
+        });
+
+        actions.appendChild(deleteButton);
         details.appendChild(actions);
     }
 
@@ -475,6 +491,71 @@ async function reviewProduct(
                 error.code || error.message || "Unknown error"
             }. Check your Firestore rules.`
         );
+    }
+}
+
+// DELETE AN APPROVED PRODUCT
+
+async function deleteApprovedProduct(product, button) {
+    if (!authorized || !auth.currentUser) {
+        alert("You are not authorized to delete products.");
+        return;
+    }
+
+    if (product.status !== "active") {
+        alert("Only approved products can be deleted from this action.");
+        await loadProducts();
+        return;
+    }
+
+    const confirmed = window.confirm(
+        `Are you sure you want to permanently delete the approved product "${product.title}"? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Deleting...";
+    }
+
+    try {
+        const productRef = doc(db, "products", product.id);
+        const latestSnapshot = await getDoc(productRef);
+
+        if (!latestSnapshot.exists()) {
+            alert("This product no longer exists.");
+            await loadProducts();
+            return;
+        }
+
+        if (latestSnapshot.data().status !== "active") {
+            alert("This product is no longer approved. Refreshing the list.");
+            await loadProducts();
+            return;
+        }
+
+        await deleteDoc(productRef);
+
+        alert("Approved product deleted successfully.");
+        await loadProducts();
+
+    } catch (error) {
+        console.error("Approved product deletion failed:", error);
+
+        alert(
+            `Delete failed: ${
+                error.code || error.message || "Unknown error"
+            }. Check your Firestore rules.`
+        );
+
+        await loadProducts();
+
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.textContent = "Delete";
+        }
     }
 }
 
@@ -566,7 +647,6 @@ function moderatorMoney(value) {
         maximumFractionDigits: 0
     }).format(Number(value) || 0);
 }
-
 // RENDER ALL ORDERS
 
 function renderOrders() {
