@@ -78,7 +78,7 @@ body {
 
 .auth-container input:focus,
 .auth-container select:focus {
-    border-color: #111;
+    border-color: #0b0b0b;
     box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
 
