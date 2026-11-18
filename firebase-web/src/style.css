@@ -226,7 +226,7 @@ body {
 }
 
 .logout-button:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(234, 137, 32, 0.1);
     border-color: rgba(255, 255, 255, 0.45);
 }
 
@@ -4003,7 +4003,7 @@ body:has(.profile-page) .page-header p {
 
 #login-form .password-toggle:hover,
 #login-form .password-toggle:focus-visible {
-    color: #111111 !important;
+    color: #2563eb !important;
     background: transparent !important;
     box-shadow: none !important;
 }
