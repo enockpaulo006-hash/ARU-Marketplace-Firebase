@@ -1,4 +1,6 @@
 import "./style.css";
+import "./notifications.js";
+import { createMarketplaceNotification } from "./notifications.js";
 
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -473,6 +475,16 @@ async function reviewProduct(
             reviewedBy: auth.currentUser.uid,
             reviewedAt: serverTimestamp(),
             updatedAt: serverTimestamp()
+        });
+
+        await createMarketplaceNotification({
+            recipientId: latestSnapshot.data().sellerId,
+            type: newStatus === "active" ? "product_approved_seller" : "product_rejected_seller",
+            title: newStatus === "active" ? "Product approved" : "Product rejected",
+            message: newStatus === "active"
+                ? `${product.title} has been approved and is now visible in the marketplace.`
+                : `${product.title} was rejected. Reason: ${rejectionReason}`,
+            productId: product.id
         });
 
         alert(
