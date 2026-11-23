@@ -1,4 +1,5 @@
 import "./style.css";
+import "./notifications.js";
 
 import { onAuthStateChanged } from "firebase/auth";
 import {
