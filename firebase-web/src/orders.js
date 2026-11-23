@@ -1,4 +1,6 @@
 import "./style.css";
+import "./notifications.js";
+import { createMarketplaceNotification } from "./notifications.js";
 
 import {
     onAuthStateChanged,
@@ -712,6 +714,33 @@ async function handleOrderAction(orderId, action, button) {
         }
 
         await updateDoc(orderRef, updateData);
+
+        if (nextStatus === "cancelled") {
+            await Promise.all([
+                createMarketplaceNotification({
+                    recipientId: latestOrder.sellerId,
+                    type: "order_cancelled_seller",
+                    title: "Order cancelled",
+                    message: `The buyer cancelled the order for ${latestOrder.productTitle || "your product"}.`,
+                    orderId
+                }),
+                createMarketplaceNotification({
+                    recipientId: "moderators",
+                    type: "order_cancelled_moderator",
+                    title: "Order cancelled",
+                    message: `An order for ${latestOrder.productTitle || "a product"} was cancelled by the buyer.`,
+                    orderId
+                })
+            ]);
+        } else {
+            await createMarketplaceNotification({
+                recipientId: latestOrder.buyerId,
+                type: "order_status_changed_buyer",
+                title: `Order ${nextStatus}`,
+                message: `Your order for ${latestOrder.productTitle || "a product"} is now ${nextStatus}.`,
+                orderId
+            });
+        }
 
         await loadOrders();
 
