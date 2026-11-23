@@ -1,5 +1,7 @@
 
 import "./style.css";
+import "./notifications.js";
+import { createMarketplaceNotification } from "./notifications.js";
 
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "./firebase";
@@ -827,6 +829,14 @@ submitAllButton.addEventListener("click", async () => {
                 collection(db, "products"),
                 productData
             );
+
+            await createMarketplaceNotification({
+                recipientId: "moderators",
+                type: "product_submitted_moderator",
+                title: "New product submitted",
+                message: `${title} has been submitted for review.`,
+                productId: productRef.id
+            });
 
             console.log(
                 "Product saved successfully:",
