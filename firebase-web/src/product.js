@@ -1,4 +1,6 @@
 ﻿import "./style.css";
+import "./notifications.js";
+import { createMarketplaceNotification } from "./notifications.js";
 
 import { onAuthStateChanged, signInAnonymously } from "firebase/auth";
 import { auth, db } from "./firebase.js";
@@ -851,6 +853,24 @@ async function placeOrder() {
             collection(db, "orders"),
             orderData
         );
+
+        // Notify the product's seller and all authorised moderators.
+        await Promise.all([
+            createMarketplaceNotification({
+                recipientId: latestProduct.sellerId,
+                type: "order_placed_seller",
+                title: "New order received",
+                message: `${buyerName} placed an order for ${latestProduct.title || "your product"}.`,
+                orderId: createdOrder.id
+            }),
+            createMarketplaceNotification({
+                recipientId: "moderators",
+                type: "order_placed_moderator",
+                title: "New marketplace order",
+                message: `A new order was placed for ${latestProduct.title || "a product"}.`,
+                orderId: createdOrder.id
+            })
+        ]);
 
         // Remember anonymous guest order IDs in this browser. A storage
         // failure must not make a successfully-created order look unsuccessful.
