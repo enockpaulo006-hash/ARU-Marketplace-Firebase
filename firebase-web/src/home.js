@@ -1,5 +1,6 @@
 
 import "./style.css";
+import "./notifications.js";
 
 import { onAuthStateChanged, signOut } from "firebase/auth";
 
