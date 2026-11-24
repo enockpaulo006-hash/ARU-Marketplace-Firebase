@@ -214,6 +214,113 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /notifications/{notificationId} {
+      function validNotificationFields() {
+        return request.resource.data.keys().hasAll([
+          "recipientId", "type", "title", "message",
+          "orderId", "productId", "read", "createdAt"
+        ])
+        && request.resource.data.keys().hasOnly([
+          "recipientId", "type", "title", "message",
+          "orderId", "productId", "read", "createdAt"
+        ])
+        && request.resource.data.recipientId is string
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 100
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 240
+        && request.resource.data.orderId is string
+        && request.resource.data.productId is string
+        && request.resource.data.read == false
+        && request.resource.data.createdAt == request.time;
+      }
+
+      allow get, list: if request.auth != null
+        && (resource.data.recipientId == request.auth.uid
+          || (resource.data.recipientId == "moderators" && isAdmin()));
+
+      allow create: if request.auth != null
+        && validNotificationFields()
+        && (
+          // A buyer who just created an order may notify its seller.
+          (request.resource.data.type == "order_placed_seller"
+            && request.resource.data.orderId is string
+            && request.resource.data.orderId.size() > 0
+            && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+            && request.auth.uid == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId
+            && request.resource.data.recipientId == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.sellerId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "pending")
+          ||
+          // The same buyer may notify all authorised moderators of that order.
+          (request.resource.data.type == "order_placed_moderator"
+            && request.resource.data.recipientId == "moderators"
+            && request.resource.data.orderId is string
+            && request.resource.data.orderId.size() > 0
+            && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+            && request.auth.uid == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "pending")
+          ||
+          // Seller status transitions notify only the buyer on that order.
+          (request.resource.data.type == "order_status_changed_buyer"
+            && request.resource.data.orderId is string
+            && request.resource.data.orderId.size() > 0
+            && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+            && request.auth.uid == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.sellerId
+            && request.resource.data.recipientId == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status in ["accepted", "rejected", "completed"])
+          ||
+          // Buyer cancellation notifies the seller and moderators.
+          (request.resource.data.type == "order_cancelled_seller"
+            && request.resource.data.orderId is string
+            && request.resource.data.orderId.size() > 0
+            && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+            && request.auth.uid == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId
+            && request.resource.data.recipientId == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.sellerId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "cancelled")
+          ||
+          (request.resource.data.type == "order_cancelled_moderator"
+            && request.resource.data.recipientId == "moderators"
+            && request.resource.data.orderId is string
+            && request.resource.data.orderId.size() > 0
+            && exists(/databases/$(database)/documents/orders/$(request.resource.data.orderId))
+            && request.auth.uid == get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.buyerId
+            && get(/databases/$(database)/documents/orders/$(request.resource.data.orderId)).data.status == "cancelled")
+          ||
+          // Seller product submissions notify moderators.
+          (request.resource.data.type == "product_submitted_moderator"
+            && request.resource.data.recipientId == "moderators"
+            && request.resource.data.productId is string
+            && request.resource.data.productId.size() > 0
+            && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+            && request.auth.uid == get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sellerId
+            && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.status == "pending")
+          ||
+          // Only an admin who reviewed the product may notify its seller.
+          (request.resource.data.type in ["product_approved_seller", "product_rejected_seller"]
+            && isAdmin()
+            && request.resource.data.productId is string
+            && request.resource.data.productId.size() > 0
+            && exists(/databases/$(database)/documents/products/$(request.resource.data.productId))
+            && request.resource.data.recipientId == get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sellerId
+            && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.reviewedBy == request.auth.uid
+            && ((request.resource.data.type == "product_approved_seller"
+                && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.status == "active")
+              || (request.resource.data.type == "product_rejected_seller"
+                && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.status == "rejected")))
+        );
+
+      allow update: if request.auth != null
+        && (resource.data.recipientId == request.auth.uid
+          || (resource.data.recipientId == "moderators" && isAdmin()))
+        && resource.data.read == false
+        && request.resource.data.read == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read"]);
+
+      allow delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
