@@ -50,7 +50,24 @@ export async function createMarketplaceNotification({
 
         return true;
     } catch (error) {
-        console.warn("Marketplace notification could not be created:", error);
+        console.error("Marketplace notification could not be created:", {
+            code: error?.code || "unknown",
+            message: error?.message || String(error),
+            recipientId,
+            type,
+            orderId,
+            productId
+        });
+
+        // Temporary visible diagnostic: the order may already be saved even
+        // though Firestore rejected the separate notification write.
+        const errorCode = error?.code || "unknown error";
+        const errorMessage = error?.message || "No additional details were provided.";
+        window.alert(
+            `Your marketplace action was saved, but its notification could not be created.\n\n` +
+            `Firestore error: ${errorCode}\n${errorMessage}\n\n` +
+            `Please send this message to support so we can correct the notification permissions.`
+        );
         return false;
     }
 }
