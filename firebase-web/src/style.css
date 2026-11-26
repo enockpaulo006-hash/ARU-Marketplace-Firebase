@@ -4451,3 +4451,24 @@ body:has(.profile-page) #logout-button {
     margin-top: 20px;
 }
 
+
+/* Profile logout button directly below WhatsApp form */
+.profile-page .profile-card #logout-button {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    margin-top: 14px !important;
+    min-height: 44px;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #dc3545;
+    border-color: #dc3545;
+    background: #ffffff;
+}
+
+.profile-page .profile-card #logout-button:hover {
+    background: #dc3545;
+    color: #ffffff;
+}
