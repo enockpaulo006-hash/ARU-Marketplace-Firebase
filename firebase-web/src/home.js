@@ -1,8 +1,8 @@
-
+﻿
 import "./style.css";
 import "./notifications.js";
 
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 
 import {
     collection,
@@ -20,7 +20,7 @@ import { auth, db } from "./firebase.js";
 // ========================================
 
 const welcomeMessage = document.getElementById("welcome-message");
-const logoutButton = document.getElementById("logout-button");
+
 const productsContainer = document.getElementById("products-container");
 const searchInput = document.getElementById("search-input");
 
@@ -159,15 +159,7 @@ onAuthStateChanged(auth, async (user) => {
                 "Welcome to ARU Marketplace";
         }
 
-        if (logoutButton) {
-            logoutButton.hidden = true;
-        }
-
         return;
-    }
-
-    if (logoutButton) {
-        logoutButton.hidden = false;
     }
 
     if (welcomeMessage) {
@@ -675,35 +667,6 @@ if (productsContainer) {
     );
 }
 
-// ========================================
-// LOGOUT
-// ========================================
-
-if (logoutButton) {
-
-    logoutButton.addEventListener(
-        "click",
-        async () => {
-
-            logoutButton.disabled = true;
-
-            try {
-                await signOut(auth);
-
-                // Remain on the home page after signing out.
-
-            } catch (error) {
-
-                console.error(
-                    "Logout failed:",
-                    error
-                );
-
-                logoutButton.disabled = false;
-            }
-        }
-    );
-}
 
 // ========================================
 // EXPAND / COLLAPSE CATEGORY MENU
@@ -857,3 +820,4 @@ categoryOptions.forEach((button) => {
         }
     );
 });
+
