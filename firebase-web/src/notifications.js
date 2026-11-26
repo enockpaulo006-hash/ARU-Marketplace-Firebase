@@ -1,4 +1,4 @@
-import {
+﻿import {
     onAuthStateChanged
 } from "firebase/auth";
 
@@ -90,7 +90,7 @@ function ensureNotificationUI() {
                     <strong>Notifications</strong>
                     <small id="aru-notification-summary">Your latest updates</small>
                 </div>
-                <button type="button" id="aru-notification-close" aria-label="Close notifications">×</button>
+                <button type="button" id="aru-notification-close" aria-label="Close notifications">Ã—</button>
             </div>
             <button type="button" id="aru-enable-browser-alerts" class="aru-enable-browser-alerts">
                 <i class="bi bi-broadcast"></i> Enable browser alerts
@@ -100,7 +100,17 @@ function ensureNotificationUI() {
             </div>
         </section>
     `;
-    document.body.appendChild(root);
+    const headerContent = document.querySelector(".marketplace-header .header-content");
+    if (headerContent) {
+        const logoutButton = headerContent.querySelector("#logout-button");
+        if (logoutButton) {
+            headerContent.insertBefore(root, logoutButton);
+        } else {
+            headerContent.appendChild(root);
+        }
+    } else {
+        document.body.appendChild(root);
+    }
 
     const bell = root.querySelector("#aru-notification-bell");
     const panel = root.querySelector("#aru-notification-panel");
@@ -263,3 +273,4 @@ ensureNotificationUI();
 onAuthStateChanged(auth, user => {
     startNotificationListener(user);
 });
+
