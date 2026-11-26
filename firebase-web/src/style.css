@@ -4424,3 +4424,19 @@ body:has(.profile-page) .page-header p {
     #aru-notification-root { top: 10px; right: 10px; }
     .aru-notification-bell { width: 40px; height: 40px; }
 }
+
+/* Notification bell: keep it inside the header, away from Logout */
+#aru-notification-root {
+    position: relative;
+    top: auto;
+    right: auto;
+    z-index: 1001;
+    flex: 0 0 auto;
+}
+
+@media (max-width: 600px) {
+    #aru-notification-root {
+        top: auto;
+        right: auto;
+    }
+}
