@@ -4440,3 +4440,14 @@ body:has(.profile-page) .page-header p {
         right: auto;
     }
 }
+
+/* Ensure the Profile logout button remains visible */
+body:has(.profile-page) #logout-button {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    width: 100%;
+    margin-top: 20px;
+}
+
