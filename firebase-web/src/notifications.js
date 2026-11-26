@@ -73,6 +73,8 @@ export async function createMarketplaceNotification({
 }
 
 function ensureNotificationUI() {
+    // Keep the floating notification bell off the My Orders page.
+    if (["/orders.html", "/profile.html"].includes(window.location.pathname)) return;
     if (document.getElementById("aru-notification-root")) return;
 
     const root = document.createElement("div");
@@ -101,13 +103,9 @@ function ensureNotificationUI() {
         </section>
     `;
     const headerContent = document.querySelector(".marketplace-header .header-content");
+
     if (headerContent) {
-        const logoutButton = headerContent.querySelector("#logout-button");
-        if (logoutButton) {
-            headerContent.insertBefore(root, logoutButton);
-        } else {
-            headerContent.appendChild(root);
-        }
+        headerContent.appendChild(root);
     } else {
         document.body.appendChild(root);
     }
@@ -273,4 +271,7 @@ ensureNotificationUI();
 onAuthStateChanged(auth, user => {
     startNotificationListener(user);
 });
+
+
+
 
